@@ -63,7 +63,7 @@ Re = MD.planet.r0;
 
 % Saturn dipole field
 % Magnetic equator field strength in T
-% B0 = 2.1160e-05;
+%B0 = 2.1160e-05;
 %B0 = MD.planet.B0;
 % corrected to match magnetodisc file
 % Bthdip(mu=0,r=1)=8.923767e-01 -> 1.888269e-05, Md=4.1336e18
@@ -101,12 +101,12 @@ alpha = 30;
 
 close all
 % initial conditions
-[X,Xgc,mu,tc,tb,td,lm] = init(4*Re,vp,alpha);
+[X,Xgc,mu,Tc,Tb,Td,Lm] = init(4*Re,vp,alpha);
 % factor mu/gamma^2/m for guiding centre Eq.23 of Ozturk 2012
 facdv = mu/gamma^2/mp; 
-tspan = [0,sum(timespec.*[1,tc,tb,td])];
+tspan = [0,sum(timespec.*[1,Tc,Tb,Td])];
 fprintf(1,'tmax=%.2f (%.1f tc, %.2f tb, %.2f td)\n',...
-        tspan(end)./[1,tc,tb,td]);
+        tspan(end)./[1,Tc,Tb,Td]);
 trace(X,Xgc);
 
 function [Xo,Xogc,mu,tc,tb,td,lm]=init(R,v,alpha)
@@ -161,15 +161,15 @@ Xp = cos(ts);
 Yp = sin(ts);
 
 tic
-[t,X] = solverh(@dynamic3d,tspan,Xo,options); 
+[tfd,Xfd] = solverh(@dynamic3d,tspan,Xo,options); 
 toc
 
-Z    = X(:,3);
-Rcyl = sqrt(X(:,1).^2+X(:,2).^2);
-Rtot = sqrt(X(:,1).^2+X(:,2).^2+X(:,3).^2);
+Zfd    = Xfd(:,3);
+Rcylfd = sqrt(Xfd(:,1).^2+Xfd(:,2).^2);
+Rtotfd = sqrt(Xfd(:,1).^2+Xfd(:,2).^2+Xfd(:,3).^2);
 
 tic
-rm = {Xo(1)*cosd(lm)^3,Xo(1)*cosd(lm)^2*sind(lm),0};
+rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
 if mdisc,
   B = mdiscMagneticField3D(Rm,{rm{1}/Re,rm{2}/Re,rm{3}/Re});
 else,
@@ -178,10 +178,10 @@ end
 % Gyro period at mirror point
 tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
 %tb = linspace(0,t(end),floor(t(end)/max(diff(t))));
-tb = linspace(tspan(1),tspan(end),6*fix(diff(tspan)/tm));
+tb = linspace(tspan(1),tspan(end),6*fix(diff(tspan)/tm))';
 %tb = t;
 hb = diff(tb);
-fprintf(1,'tm=%.2f, tc/tm=%.2f, tc/hb(1)=%.2f\n', [tm,fix(tc/tm),fix(tc/hb(1))]);
+fprintf(1,'tm=%.2f, tc/tm=%.2f, tc/hb(1)=%.2f\n',[tm,fix(Tc/tm),fix(Tc/hb(1))]);
 Xb = zeros(length(tb),length(Xo));
 Xb(1,:) = BorisInit(Xo,hb(1));
 for i=1:length(tb)-1
@@ -202,25 +202,26 @@ Rcylgc = sqrt(Xgc(:,1).^2+Xgc(:,2).^2);
 Rtotgc = sqrt(Xgc(:,1).^2+Xgc(:,2).^2+Xgc(:,3).^2);
 
 figure
-plot(Rcyl/Re,Z/Re,Rcylb/Re,Zb/Re,Rcylgc/Re,Zgc/Re,Xp,Yp),
+plot(Rcylfd/Re,Zfd/Re,Rcylb/Re,Zb/Re,Rcylgc/Re,Zgc/Re,Xp,Yp),
 axis equal,
 xlabel('rcyl'), ylabel('z')
 legend({'FD','FDB','GC'})
 fprintf(1,'Ok, press return\n'),
 pause
+fprintf(1,'\n');
 
 
 % save all trajectories
-save cmptraj_saturn t X tb Xb tgc Xgc timespec
+save cmptraj_saturn tfd Xfd tb Xb tgc Xgc timespec Tc Tb Td Lm
 
-% Kinetic energy in eV
-v2 = sum(X(:,[4:6])'.^2);
-%E = 1/2*mp*v2/eV;  % classic
-E = (1./sqrt(1-v2/c^2)-1)*mp*c^2/eV; % relativistic
+% Kinetic energy in eV for Full Dynamic
+v2fd = sum(Xfd(:,[4:6])'.^2);
+%Efd = 1/2*mp*v2fd/eV;  % classic
+Efd = (1./sqrt(1-v2fd/c^2)-1)*mp*c^2/eV; % relativistic
 % mean and variance
-meanE = mean(E);
-stdE = std(E);
-fprintf(1,'<E>  = %10g MeV, std(E) = %10g eV\n', meanE/1e6, stdE);
+meanEfd = mean(Efd);
+stdEfd = std(Efd);
+fprintf(1,'<E>  = %10g MeV, std(E) = %10g eV\n', meanEfd/1e6, stdEfd);
 
 % Kinetic energy in eV for Full Dynamic Boris
 v2b = sum(Xb(:,[4:6])'.^2);
@@ -231,34 +232,34 @@ meanEb = mean(Eb);
 stdEb = std(Eb);
 fprintf(1,'<Eb> = %10g MeV, std(E) = %10g eV\n', meanEb/1e6, stdEb);
 
-plot(t,E-meanE,tb,Eb-meanEb);
+plot(tfd,Efd-meanEfd,tb,Eb-meanEb);
 xlabel('time'), ylabel('E-<E>')
 legend({'FD','FDB'})
 fprintf(1,'Ok, press return\n'),
 pause
-
+fprintf(1,'\n');
 
 % Compute b dot gradB and mu for Full Dynamic
 if mdisc,
-  [B,gradB] = mdiscMagneticField3D(Rm,{X(:,1)/Re,X(:,2)/Re,X(:,3)/Re});
+  [B,gradB] = mdiscMagneticField3D(Rm,{Xfd(:,1)/Re,Xfd(:,2)/Re,Xfd(:,3)/Re});
 else
-  [B,gradB] = dipoleMagneticField3D(Md, Rm, {X(:,1),X(:,2),X(:,3)});
+  [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xfd(:,1),Xfd(:,2),Xfd(:,3)});
 end
-BgB = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
-Vper2 = V2-(B{1}.*X(:,4)+B{2}.*X(:,5)+B{3}.*X(:,6)).^2./B{4};
+BgBfd = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
+Vper2fd = V2-(B{1}.*Xfd(:,4)+B{2}.*Xfd(:,5)+B{3}.*Xfd(:,6)).^2./B{4};
 % Instantaneous first invariant Eq.14 
-mui = gamma^2*mp*Vper2./(2*sqrt(B{4}));
+muifd = gamma^2*mp*Vper2fd./(2*sqrt(B{4}));
 
 % Compute b dot gradB and mu for Full Dynamic Boris
 if mdisc,
   [B,gradB] = mdiscMagneticField3D(Rm,{Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re});
 else
-  [B,gradB] = dipoleMagneticField3D(Md, Rm, {X(:,1),X(:,2),X(:,3)});
+  [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xb(:,1),Xb(:,2),Xb(:,3)});
 end
-BgB = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
-Vper2 = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./B{4};
+BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
+Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./B{4};
 % Instantaneous first invariant Eq.14 
-muib = gamma^2*mp*Vper2./(2*sqrt(B{4}));
+muib = gamma^2*mp*Vper2b./(2*sqrt(B{4}));
 
 % Compute b dot gradB and mu for Guiding Centre
 if mdisc,
@@ -272,39 +273,40 @@ Vper2gc = V2-Xgc(:,4).^2;
 muigc = gamma^2*mp*Vper2gc./(2*sqrt(B{4}));
 
 subplot(211), 
-plot(t,mui,tb,muib,tgc,muigc,tgc,facdv*gamma^2*mp*ones(size(tgc))),
+plot(tfd,muifd,tb,muib,tgc,muigc,tgc,facdv*gamma^2*mp*ones(size(tgc))),
 ylabel('\mu 1st invariant')
 legend('FD','FDB','GC','Initial')
 
 % Compute latitude and longitude
-lat = atan2d(Z,Rcyl);        % atan(Rcyl/Z)
-lon = atan2d(X(:,2),X(:,1)); % atan(X/Y);
+latfd = atan2d(Zfd,Rcylfd);        % atan(Rcyl/Z)
+lonfd = atan2d(Xfd(:,2),Xfd(:,1)); % atan(X/Y);
 latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
 lonb = atan2d(Xb(:,2),Xb(:,1)); % atan(X/Y);
 latgc = atan2d(Zgc,Rcylgc);
 longc = atan2d(Xgc(:,2),Xgc(:,1));
 
 subplot(212), 
-%plot(t,X(:,3)/Re,tgc,Xgc(:,3)/Re), ylabel('z')
-plot(t,lat,tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
+%plot(tfd,Xfd(:,3)/Re,tgc,Xgc(:,3)/Re), ylabel('z')
+plot(tfd,latfd,tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
 legend('FD','FDB','GC')
 
 fprintf(1,'Ok, press return\n'), 
 pause
-%subplot(211), plot(t,BgB,tgc,BgBgc),
-%subplot(212), plot(X(:,3)/Re,BgB,Xgc(:,3)/Re,BgBgc),pause
+fprintf(1,'\n');
+%subplot(211), plot(tfd,BgBfd,tgc,BgBgc),
+%subplot(212), plot(Xfd(:,3)/Re,BgBfd,Xgc(:,3)/Re,BgBgc),pause
 
 % L-Shell with L
 t = linspace(-pi/2,pi/2,100);
 % estimate L from instantaneous L
 %coslat = Rcyl./R; Ls = R./coslat.^2/Re;
-Ls = Rtot.^3./Rcyl.^2/Re;
+Lsfd = Rtotfd.^3./Rcylfd.^2/Re;
 Lsgc = Rtotgc.^3./Rcylgc.^2/Re;
-Le = mean(Ls);
+Le = mean(Lsfd);
 fprintf(1,'L estimated = %.2f\n', Le);
 if 0,
 	f=figure; 
-	plot(t,Ls), 
+	plot(tfd,Lsfd), 
 	pause, close(f);
 end
 r = Le *cos(t).^2;
@@ -314,13 +316,13 @@ ye = r(ir).*sin(t(ir));
 
 % plot trajectory Rcyl vs Z
 subplot(211), 
-plot(Rcyl/Re,Z/Re,Rcylgc/Re,Zgc/Re,xe,ye,'-.',Xp,Yp), 
+plot(Rcylfd/Re,Zfd/Re,Rcylb/Re,Zb/Re,Rcylgc/Re,Zgc/Re,xe,ye,'-.',Xp,Yp), 
 xlabel('$r_{cyl}=\sqrt{x^2+y^2}$','interpreter','latex'),
 ylabel('$z$','interpreter','latex'),
 title(sprintf('%s x0=%.0f x0gc=%.4f L=%.4f', ...
       solver, Xo(1)/Re, Xogc(1)/Re,Le),...
       'interpreter','latex')
-legend({'FD','GC','L-shell'},'interpreter','latex');
+legend({'FD','FDB','GC','L-shell'},'interpreter','latex');
 %set(gca,'xlim',[0 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal,
@@ -328,25 +330,47 @@ axis equal,
 subplot(212),
 if 1,
 % plot trajectory X vs Y
-plot(X(:,1)/Re,X(:,2)/Re,...
+plot(Xfd(:,1)/Re,Xfd(:,2)/Re,...
      Xb(:,1)/Re,Xb(:,2)/Re,...
      Xgc(:,1)/Re,Xgc(:,2)/Re,Xp,Yp), 
 xlabel('$x$','interpreter','latex'),
 ylabel('$y$','interpreter','latex'),
 else
 % 3d plot trajectory
-plot3(X(:,1)/Re,X(:,2)/Re,X(:,3)/Re,...
+plot3(Xfd(:,1)/Re,Xfd(:,2)/Re,Xfd(:,3)/Re,...
       Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re,...
       Xgc(:,1)/Re,Xgc(:,2)/Re,Xgc(:,3)/Re), 
 xlabel('$x$','interpreter','latex'),
 ylabel('$y$','interpreter','latex'),
 zlabel('$z$','interpreter','latex'),
 end
-title(sprintf('$\\langle{E}\\rangle=$%2g MeV std$(E)=$%2g eV',meanE/1e6,stdE),...
+title(sprintf('$\\langle{E}\\rangle=$%2g MeV std$(E)=$%2g eV',...
+      meanEfd/1e6,stdEfd),...
       'interpreter','latex');
 %set(gca,'xlim',[-4.5 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal
+
+fprintf(1,'Ok, press return\n'),
+pause
+fprintf(1,'\n');
+
+subplot(211),
+plot(tfd,latfd,tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
+legend('FD','FDB','GC')
+
+[tbfd,dtbfd] = getbounceperiod(tfd,latfd,2*pi/Tb);
+[tbb,dtbb] = getbounceperiod(tb,latb,2*pi/Tb);
+[tbgc,dtbgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+
+subplot(212),
+plot(tfd,lonfd,tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
+legend('FD','FDB','GC')
+
+
+[tdfd,dtdfd] = getdriftperiod(tfd,lonfd,2*pi/tbfd,360);
+[tdb,dtdb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+[tdgc,dtdgc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
 
 drawnow
 
@@ -487,8 +511,8 @@ Omegac = qOverM/gamma*B;
 tc = 2*pi/Omegac;
 
 % Bouncing period
-%afactor 1.2478 =  Re/c*sqrt(2)*3.7
-tb = 1.2478*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
+% factor 1.2478 =  Re/c*sqrt(2)*3.7
+tb = 1.0521*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node22.html
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
 
