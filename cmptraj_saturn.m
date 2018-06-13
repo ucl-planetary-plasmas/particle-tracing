@@ -511,7 +511,7 @@ Omegac = qOverM/gamma*B;
 tc = 2*pi/Omegac;
 
 % Bouncing period
-% factor 1.2478 =  Re/c*sqrt(2)*3.7
+% factor 1.0521 =  Re/c*sqrt(2)*3.7
 tb = 1.0521*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node22.html
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
