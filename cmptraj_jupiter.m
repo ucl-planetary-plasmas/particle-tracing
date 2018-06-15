@@ -15,7 +15,7 @@ function cmptraj_jupiter(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_jupiter.m,v 1.7 2017/10/17 20:22:09 patrick Exp $
+% $Id: cmptraj_jupiter.m,v 1.8 2018/06/15 17:27:29 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.

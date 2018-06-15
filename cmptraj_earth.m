@@ -15,7 +15,7 @@ function cmptraj_earth(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_earth.m,v 1.5 2017/10/17 20:20:55 patrick Exp $
+% $Id: cmptraj_earth.m,v 1.6 2018/06/15 17:27:29 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.

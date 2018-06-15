@@ -15,7 +15,7 @@ function cmptraj_saturn(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_saturn.m,v 1.2 2017/10/18 09:18:57 patrick Exp $
+% $Id: cmptraj_saturn.m,v 1.3 2018/06/15 17:27:29 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.

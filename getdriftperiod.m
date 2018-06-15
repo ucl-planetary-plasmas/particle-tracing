@@ -9,7 +9,7 @@ function [td,dtd]=getdriftperiod(t,x,omb,a4td)
 
 
 %
-% $Id: getperiod.m,v 1.3 2017/01/12 15:40:52 patrick Exp $
+% $Id: getdriftperiod.m,v 1.1 2018/06/15 17:27:29 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
