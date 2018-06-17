@@ -15,7 +15,7 @@ function cmptraj_saturn(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_saturn.m,v 1.3 2018/06/15 17:27:29 patrick Exp $
+% $Id: cmptraj_saturn.m,v 1.4 2018/06/17 17:41:02 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -511,8 +511,8 @@ Omegac = qOverM/gamma*B;
 tc = 2*pi/Omegac;
 
 % Bouncing period
-% factor 1.0521 =  Re/c*sqrt(2)*3.7
-tb = 1.0521*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
+% factor 1.0519 =  Re/c*sqrt(2)*3.7
+tb = 1.0519*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node22.html
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
 
