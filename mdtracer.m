@@ -30,7 +30,7 @@ function mdtracer(mdfile,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: mdtracer.m,v 1.2 2018/06/17 18:29:49 patrick Exp $
+% $Id: mdtracer.m,v 1.3 2018/06/17 21:33:39 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -195,7 +195,7 @@ Rtotgc = sqrt(Xgc(:,1).^2+Xgc(:,2).^2+Xgc(:,3).^2);
 figure
 plot(Rcylb/Re,Zb/Re,Rcylgc/Re,Zgc/Re,Xp,Yp),
 axis equal,
-xlabel('rcyl'), ylabel('z')
+xlabel('\rho'), ylabel('z')
 legend({'FD','GC'})
 fprintf(1,'Ok, press return\n'),
 pause
@@ -234,7 +234,7 @@ muigc = gamma^2*mp*Vper2gc./(2*sqrt(B{4}));
 subplot(211), 
 plot(tb,muib,tgc,muigc,tgc,facdv*gamma^2*mp*ones(size(tgc))),
 ylabel('\mu 1st invariant')
-legend('FD','GC','Initial')
+legend({'FD','GC','Initial'})
 
 % Compute latitude and longitude
 latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
@@ -245,7 +245,7 @@ longc = atan2d(Xgc(:,2),Xgc(:,1));
 subplot(212), 
 %plot(tgc,Xgc(:,3)/Re), ylabel('z')
 plot(tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
-legend('FD','GC')
+legend({'FD','GC'})
 
 fprintf(1,'Ok, press return\n'), 
 pause
@@ -274,12 +274,11 @@ ye = r(ir).*sin(t(ir));
 % plot trajectory Rcyl vs Z
 subplot(211), 
 plot(Rcylb/Re,Zb/Re,Rcylgc/Re,Zgc/Re,xe,ye,'-.',Xp,Yp), 
-xlabel('$r_{cyl}=\sqrt{x^2+y^2}$','interpreter','latex'),
-ylabel('$z$','interpreter','latex'),
+xlabel('\rho'),
+ylabel('z'),
 title(sprintf('%s x0=%.0f x0gc=%.4f L=%.4f', ...
-      solver, Xo(1)/Re, Xogc(1)/Re,Le),...
-      'interpreter','latex')
-legend({'FD','GC','L-shell'},'interpreter','latex');
+      solver, Xo(1)/Re, Xogc(1)/Re,Le))
+legend({'FD','GC','L-shell'});
 %set(gca,'xlim',[0 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal,
@@ -289,19 +288,17 @@ if 1,
 % plot trajectory X vs Y
 plot(Xb(:,1)/Re,Xb(:,2)/Re,...
      Xgc(:,1)/Re,Xgc(:,2)/Re,Xp,Yp), 
-xlabel('$x$','interpreter','latex'),
-ylabel('$y$','interpreter','latex'),
+xlabel('x'),
+ylabel('y'),
 else
 % 3d plot trajectory
 plot3(Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re,...
       Xgc(:,1)/Re,Xgc(:,2)/Re,Xgc(:,3)/Re), 
-xlabel('$x$','interpreter','latex'),
-ylabel('$y$','interpreter','latex'),
-zlabel('$z$','interpreter','latex'),
+xlabel('x'),
+ylabel('y'),
+zlabel('z'),
 end
-title(sprintf('$\\langle{E}\\rangle=$%2g MeV std$(E)=$%2g eV',...
-      meanEb/1e6,stdEb),...
-      'interpreter','latex');
+title(sprintf('<E>=$%2g MeV std(E)=%2g eV',meanEb/1e6,stdEb));
 %set(gca,'xlim',[-4.5 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal
@@ -312,14 +309,14 @@ fprintf(1,'\n');
 
 subplot(211),
 plot(tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
-legend('FD','GC')
+legend({'FD','GC'})
 
 [tbb,dtbb] = getbounceperiod(tb,latb,2*pi/Tb);
 [tbgc,dtbgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
 
 subplot(212),
 plot(tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
-legend('FD','GC')
+legend({'FD','GC'})
 
 
 [tdb,dtdb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
