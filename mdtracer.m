@@ -30,7 +30,7 @@ function mdtracer(mdfile,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: mdtracer.m,v 1.3 2018/06/17 21:33:39 patrick Exp $
+% $Id: mdtracer.m,v 1.4 2018/06/18 12:09:36 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -116,8 +116,6 @@ trace(X,Xgc);
 
 function [Xo,Xogc,mu,tc,tb,td,lm]=init(R,v,alpha)
 
-fprintf(1,'R=%.2f pitch angle=%.0f\n', R/Re, alpha)
-
 % initial condition x0,y0,z0,vx0,vy0,vz0
 Xo = [R;            0;            0;...
       0;v*sind(alpha);v*cosd(alpha)];
@@ -125,6 +123,9 @@ Xo = [R;            0;            0;...
 % initial guiding centre x0,y0,z0,vpar0
 B = mdiscMagneticField3D(Rm,{Xo(1)/Re,Xo(2)/Re,Xo(3)/Re});
 b = sqrt(B{4});
+
+fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
+
 % smaller vpar gives larger vper thus guiding centre motion
 %vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
 vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);

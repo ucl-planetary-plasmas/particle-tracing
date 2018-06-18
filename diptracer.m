@@ -32,7 +32,7 @@ function diptracer(planet,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: diptracer.m,v 1.3 2018/06/17 21:33:39 patrick Exp $
+% $Id: diptracer.m,v 1.4 2018/06/18 12:09:23 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -77,7 +77,7 @@ switch (lower(planet)),
 		B0 = 21160.0e-9;    % magnetic equator field strength in T
 		% corrected to match magnetodisc file sat_mdisc_kh2e6_rmp25.mat
 		% Bthdip(mu=0,r=1)=8.923767e-01 -> 1.888269e-05
-		B0 = B0 * 8923767e-01;
+		B0 = B0 * 8.923767e-01;
 	otherwise,
 	  error([planet ':  unknown planet!'])
 end
@@ -119,7 +119,6 @@ trace(X,Xgc);
 
 function [Xo,Xogc,mu,tc,tb,td,lm]=init(R,v,alpha)
 
-fprintf(1,'R=%.2f pitch angle=%.0f\n', R/Re, alpha)
 
 % initial condition x0,y0,z0,vx0,vy0,vz0
 Xo = [R;            0;            0;...
@@ -128,6 +127,9 @@ Xo = [R;            0;            0;...
 % initial guiding centre x0,y0,z0,vpar0
 B = dipoleMagneticField3D(Md,Rm,{Xo(1),Xo(2),Xo(3)});
 b = sqrt(B{4});
+
+fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
+
 % smaller vpar gives larger vper thus guiding centre motion
 %vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
 vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
