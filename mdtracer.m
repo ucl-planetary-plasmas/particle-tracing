@@ -30,7 +30,7 @@ function mdtracer(mdfile,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: mdtracer.m,v 1.4 2018/06/18 12:09:36 patrick Exp $
+% $Id: mdtracer.m,v 1.5 2018/06/25 18:44:45 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -164,20 +164,32 @@ ts = linspace(0,2*pi,100);
 Xp = cos(ts);
 Yp = sin(ts);
 
-tic
+% *dipole* mirror point
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
-B = mdiscMagneticField3D(Rm,{rm{1}/Re,rm{2}/Re,rm{3}/Re});
+if sqrt(rm{1}^2+rm{2}^2)/Re < 1,
+  error(sprintf('%s R=%.2f < 1\n%s',...
+        'Estimated mirror point within planet',...
+        sqrt(rm{1}^2+rm{2}^2)/Re,...
+        'MDisc interpolation problem!'));
+end
+% B from magnetodisc
+%B = mdiscMagneticField3D(Rm,{rm{1}/Re,rm{2}/Re,rm{3}/Re});
+B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at mirror point
 tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
-%tb = linspace(0,t(end),floor(t(end)/max(diff(t))));
-tb = linspace(tspan(1),tspan(end),6*fix(diff(tspan)/tm))';
-%tb = t;
-hb = diff(tb);
-fprintf(1,'tm=%.2f, tc/tm=%.2f, tc/hb(1)=%.2f\n',[tm,fix(Tc/tm),fix(Tc/hb(1))]);
+% number of iteration such that dt \sim max([tm/3,Tc/5])
+%tb = linspace(tspan(1),tspan(end),min(fix(diff(tspan)./[tm/3,Tc/5])))';
+tb = linspace(tspan(1),tspan(end),fix(diff(tspan)./[Tc/5]))';
+dt = diff(tb(1:2));
+% tc/tm ratio of gyro period at equator and dipole mirror point
+fprintf(1,'tm=%.2g, tm/dt=%.2f tc/tm=%.2f, tc/dt=%.2f\n',...
+        [tm,tm/dt,Tc/tm,Tc/dt]);
+
+tic
 Xb = zeros(length(tb),length(Xo));
-Xb(1,:) = BorisInit(Xo,hb(1));
+Xb(1,:) = BorisInit(Xo,dt);
 for i=1:length(tb)-1
-  Xb(i+1,:) = BorisIter(Xb(i,:),hb(i));
+  Xb(i+1,:) = BorisIter(Xb(i,:),dt);
 end
 toc
 
@@ -299,7 +311,7 @@ xlabel('x'),
 ylabel('y'),
 zlabel('z'),
 end
-title(sprintf('<E>=$%2g MeV std(E)=%2g eV',meanEb/1e6,stdEb));
+title(sprintf('<E>=%2g MeV std(E)=%2g eV',meanEb/1e6,stdEb));
 %set(gca,'xlim',[-4.5 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal
@@ -308,27 +320,40 @@ fprintf(1,'Ok, press return\n'),
 pause
 fprintf(1,'\n');
 
-subplot(211),
-plot(tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
-legend({'FD','GC'})
+% identify zero crossings
+izc = find(latb(1:end-1).*latb(2:end)<0);
+Tbe = 2*mean(diff(tb(izc)));
+% Taking average of Tb and Tbe with weight 1 and 2
+Tbi= (Tb+2*Tbe)/3;
+Tbi= Tbe;
+fprintf(1,'**** Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,Tbe,Tbi);
+[tbb,dtbb,lmb,fitlatb] = getbounceperiod(tb,latb,2*pi/Tbi);
+[tbgc,dtbgc,lmgc,fitlatgc] = getbounceperiod(tgc,latgc,2*pi/Tbi);
 
-[tbb,dtbb] = getbounceperiod(tb,latb,2*pi/Tb);
-[tbgc,dtbgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+subplot(211),
+plot(tb,latb,tgc,latgc,tb,fitlatb,tgc,fitlatgc),
+xlabel('time'); ylabel('Latitude')
+legend({'FD','GC','FITFD','FITGC'})
+
+[tdb,dtdb,fitlonb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+[tdgc,dtdgc,fitlongc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
 
 subplot(212),
-plot(tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
-legend({'FD','GC'})
-
-
-[tdb,dtdb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[tdgc,dtdgc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+plot(tb,lonb,tgc,longc,tb,fitlonb,tgc,fitlongc),
+xlabel('time'); ylabel('Longitude')
+legend({'FD','GC','FITFD','FITGC'})
 
 drawnow
 
 if exist('savefile','var') & ~isempty(savefile), % save all trajectories
-  save(savefile,'mdfile','Ep','Ri','ai','timespec',...
+  Be = mdiscMagneticField3D(Rm,{Re/Re,0,0});
+  Be = sqrt(Be{4});
+  save(savefile,'mdfile','Re','Be','Ep','Ri','ai','timespec',...
        'Tc','Tb','Td','Lm','tb','Xb','tgc','Xgc',...
-       'tbb','dtbb','tbgc','dtbgc','tdb','dtdb','tdgc','dtdgc');
+       'Zb','Rcylb','Rtotb','Eb','muib','latb','lonb',...
+       'Zgc','Rcylgc','Rtotgc','muigc','latgc','longc',...
+       'fitlatb','fitlonb','fitlatgc','fitlongc',...
+       'tbb','dtbb','tbgc','dtbgc','tdb','dtdb','tdgc','dtdgc','lmb','lmgc');
 end
 
 end
@@ -345,7 +370,7 @@ B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
 fac = qOverM/gamma;
 
-%T = -tan(B{4}*h/2.0)*[Bx,By,Bz]'/B{4};
+%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 

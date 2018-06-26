@@ -32,7 +32,7 @@ function diptracer(planet,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: diptracer.m,v 1.4 2018/06/18 12:09:23 patrick Exp $
+% $Id: diptracer.m,v 1.5 2018/06/25 18:44:45 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -65,16 +65,16 @@ close all
 switch (lower(planet)),
   case 'earth',
 	  Re = 6378.0e3;      % equatorial radius in m
-		B0 = 3.07e-5;       % magnetic equator field strength in T
+		B0 = -3.07e-5;      % (moment signed) magnetic equator field strength in T
 	case 'jupiter',
 	  Re = 71492.0e3;     % equatorial radius in m
-		B0 = 428.0e-6;      % magnetic equator field strength in T
+		B0 = 428.0e-6;      % (moment signed) magnetic equator field strength in T
 		% corrected to match magnetodisc file jup_mdisc_kh3e7_rmp90.mat
 		% Bthdip(mu=0,r=1)=8.176230e-01 -> 3.499426e-04
 		B0 = B0 * 8.176230e-01;
 	case 'saturn',
 	  Re = 60280.0e3;     % equatorial radius in m
-		B0 = 21160.0e-9;    % magnetic equator field strength in T
+		B0 = 21160.0e-9;    % (moment signed) magnetic equator field strength in T
 		% corrected to match magnetodisc file sat_mdisc_kh2e6_rmp25.mat
 		% Bthdip(mu=0,r=1)=8.923767e-01 -> 1.888269e-05
 		B0 = B0 * 8.923767e-01;
@@ -82,7 +82,7 @@ switch (lower(planet)),
 	  error([planet ':  unknown planet!'])
 end
 
-Md = [0,0,B0*Re^3];  % Magnetic moment
+Md = [0,0,B0*Re^3];  % Magnetic moment \mu_0 M/(4\pi) in T m^3
 Rm = [0,0,0];        % Centered moment
 
 % SI constants
@@ -134,12 +134,15 @@ fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
 %vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
 vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
 vper = sqrt(V2-vpar^2);
+
 % gyro radius
 rho = abs(gamma/qOverM*vper/b);
+
 % add or substract gyroradius depending on sign of q and magnetic moment
 Xogc = [R-sign(qOverM*Md(3))*rho;0;0;vpar];
 B = dipoleMagneticField3D(Md,Rm,{Xogc(1),Xogc(2),Xogc(3)});
 b = sqrt(B{4});
+
 % first invariant mu
 mu = gamma^2*mp*vper^2/(2*b);
 
@@ -168,20 +171,25 @@ ts = linspace(0,2*pi,100);
 Xp = cos(ts);
 Yp = sin(ts);
 
-tic
+% B at dipole mirror point
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
 B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at mirror point
 tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
 %tb = linspace(0,t(end),floor(t(end)/max(diff(t))));
-tb = linspace(tspan(1),tspan(end),6*fix(diff(tspan)/tm))';
-%tb = t;
-hb = diff(tb);
-fprintf(1,'tm=%.2f, tc/tm=%.2f, tc/hb(1)=%.2f\n',[tm,fix(Tc/tm),fix(Tc/hb(1))]);
+% number of iteration such that dt \sim max([2*tm,Tc/5])
+%tb = linspace(tspan(1),tspan(end),max(fix(diff(tspan)./[2*tm,Tc/5])))';
+tb = linspace(tspan(1),tspan(end),fix(diff(tspan)./[Tc/5]))';
+dt = diff(tb(1:2));
+% tc/tm ratio of gyro period at equator and dipole mirror point
+fprintf(1,'tm=%.2g, tm/dt=%.2f tc/tm=%.2f, tc/dt=%.2f\n',...
+        [tm,tm/dt,Tc/tm,Tc/dt]);
+
+tic
 Xb = zeros(length(tb),length(Xo));
-Xb(1,:) = BorisInit(Xo,hb(1));
+Xb(1,:) = BorisInit(Xo,dt);
 for i=1:length(tb)-1
-  Xb(i+1,:) = BorisIter(Xb(i,:),hb(i));
+  Xb(i+1,:) = BorisIter(Xb(i,:),dt);
 end
 toc
 
@@ -303,8 +311,7 @@ xlabel('x'),
 ylabel('y'),
 zlabel('z'),
 end
-title(sprintf('<E>e=%2g MeV std(E)=%2g eV',...
-      meanEb/1e6,stdEb));
+title(sprintf('<E>=%2g MeV std(E)=%2g eV',meanEb/1e6,stdEb));
 %set(gca,'xlim',[-4.5 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal
@@ -313,27 +320,33 @@ fprintf(1,'Ok, press return\n'),
 pause
 fprintf(1,'\n');
 
-subplot(211),
-plot(tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
-legend({'FD','GC'})
+[tbb,dtbb,lmb,fitlatb] = getbounceperiod(tb,latb,2*pi/Tb);
+[tbgc,dtbgc,lmgc,fitlatgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
 
-[tbb,dtbb] = getbounceperiod(tb,latb,2*pi/Tb);
-[tbgc,dtbgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+subplot(211),
+plot(tb,latb,tgc,latgc,tb,fitlatb,tgc,fitlatgc),
+xlabel('time'); ylabel('Latitude')
+legend({'FD','GC','FITFD','FITGC'})
+
+[tdb,dtdb,fitlonb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+[tdgc,dtdgc,fitlongc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
 
 subplot(212),
-plot(tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
-legend({'FD','GC'})
-
-
-[tdb,dtdb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[tdgc,dtdgc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+plot(tb,lonb,tgc,longc,tb,fitlonb,tgc,fitlongc),
+xlabel('time'); ylabel('Longitude')
+legend({'FD','GC','FITFD','FITGC'})
 
 drawnow
 
 if exist('savefile','var') & ~isempty(savefile), % save all trajectories
-  save(savefile,'planet','Ep','Ri','ai','timespec',...
+  Be = dipoleMagneticField3D(Md, Rm, {Re,0,0});
+  Be = sqrt(Be{4});
+  save(savefile,'planet','Re','Be','Ep','Ri','ai','timespec',...
        'Tc','Tb','Td','Lm','tb','Xb','tgc','Xgc',...
-       'tbb','dtbb','tbgc','dtbgc','tdb','dtdb','tdgc','dtdgc');
+       'Zb','Rcylb','Rtotb','Eb','muib','latb','lonb',...
+       'Zgc','Rcylgc','Rtotgc','muigc','latgc','longc',...
+       'fitlatb','fitlonb','fitlatgc','fitlongc',...
+       'tbb','dtbb','tbgc','dtbgc','tdb','dtdb','tdgc','dtdgc','lmb','lmgc');
 end
 
 end
@@ -350,7 +363,7 @@ B = dipoleMagneticField3D(Md,Rm,{x,y,z});
 
 fac = qOverM/gamma;
 
-%T = -tan(B{4}*h/2.0)*[Bx,By,Bz]'/B{4};
+%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 

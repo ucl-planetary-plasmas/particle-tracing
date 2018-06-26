@@ -1,5 +1,5 @@
-function [td,dtd]=getdriftperiod(t,x,omb,a4td)
-% function [td,dtd]=getdriftperiod(t,x,omb,a4td)
+function [td,dtd,f]=getdriftperiod(t,x,omb,a4td)
+% function [td,dtd,f]=getdriftperiod(t,x,omb,a4td)
 %
 % t,x: time series of longitudes
 % omb: estimate for bounce frequency \omega_b = 2\pi/\tau_b in rad/s
@@ -9,7 +9,7 @@ function [td,dtd]=getdriftperiod(t,x,omb,a4td)
 
 
 %
-% $Id: getdriftperiod.m,v 1.1 2018/06/15 17:27:29 patrick Exp $
+% $Id: getdriftperiod.m,v 1.2 2018/06/25 18:44:45 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -74,8 +74,8 @@ dtb = 2*(2*pi*psd(2)/p(2)^2);
 td = a4td/p(4);
 dtd = a4td*psd(4)/p(4)^2;
 
-fprintf(1,'kvg=%d iter=%2d tb=%.4g (%.2g) A=%.2g (%.2g) td=%.4g (%.2g)\n',...
-        kvg, iter, tb, dtb, p(1), psd(1),td,dtd);
+fprintf(1,'kvg=%d iter=%2d tb=%6.2f s (%.2g) td=%6.2f s (%.2g)\n',...
+        kvg, iter, tb, dtb, td,dtd);
 
 if 0,
 clf
