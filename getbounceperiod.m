@@ -1,13 +1,17 @@
-function [tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
-% function [tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
+function [kvg,tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
+% function [kvg,tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
 %
 % t,x  : time series of latitudes or other periodic time series with bounce
 %        period
 % omb  : estimate for bounce frequency omega_b = 2\pi/\tau_b
+% kvg: fit status
+% tb: bounce period in seconds
+% dtb: std estimate for tb
 % mplat: mirror point latitude (maximum of latitude time series max(abs(x))
+% f: time series of model latitudes
 
 %
-% $Id: getbounceperiod.m,v 1.2 2018/06/25 18:44:45 patrick Exp $
+% $Id: getbounceperiod.m,v 1.3 2018/07/13 16:47:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.

@@ -1,15 +1,19 @@
-function [td,dtd,f]=getdriftperiod(t,x,omb,a4td)
-% function [td,dtd,f]=getdriftperiod(t,x,omb,a4td)
+function [kvg,td,dtd,f]=getdriftperiod(t,x,omb,a4td)
+% function [kvg,td,dtd,f]=getdriftperiod(t,x,omb,a4td)
 %
 % t,x: time series of longitudes
 % omb: estimate for bounce frequency \omega_b = 2\pi/\tau_b in rad/s
 % a4td: angle for 1 drift period (360 for longitude in degrees, 2*pi 
 %       fpr longitude in radians)
+% kvg: fit status
+% td: drift period in seconds
+% dtd: std estimate for td
+% f: time series of model longitudes
 
 
 
 %
-% $Id: getdriftperiod.m,v 1.2 2018/06/25 18:44:45 patrick Exp $
+% $Id: getdriftperiod.m,v 1.3 2018/07/13 16:47:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -67,7 +71,7 @@ verbose = [0 0];
 psd = zeros(size(p));
 psd(dp==1) = sqrt(diag(covp));
 
-% 2*omb this 2*tb
+% omfit=2*omb thus tfit=tb/2
 tb = 2*(2*pi/p(2));
 dtb = 2*(2*pi*psd(2)/p(2)^2);
 

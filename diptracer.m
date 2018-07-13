@@ -32,7 +32,7 @@ function diptracer(planet,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: diptracer.m,v 1.5 2018/06/25 18:44:45 patrick Exp $
+% $Id: diptracer.m,v 1.6 2018/07/13 16:49:49 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -320,16 +320,16 @@ fprintf(1,'Ok, press return\n'),
 pause
 fprintf(1,'\n');
 
-[tbb,dtbb,lmb,fitlatb] = getbounceperiod(tb,latb,2*pi/Tb);
-[tbgc,dtbgc,lmgc,fitlatgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+[~,tbb,dtbb,lmb,fitlatb] = getbounceperiod(tb,latb,2*pi/Tb);
+[~,tbgc,dtbgc,lmgc,fitlatgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
 
 subplot(211),
 plot(tb,latb,tgc,latgc,tb,fitlatb,tgc,fitlatgc),
 xlabel('time'); ylabel('Latitude')
 legend({'FD','GC','FITFD','FITGC'})
 
-[tdb,dtdb,fitlonb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[tdgc,dtdgc,fitlongc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+[~,tdb,dtdb,fitlonb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+[~,tdgc,dtdgc,fitlongc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
 
 subplot(212),
 plot(tb,lonb,tgc,longc,tb,fitlonb,tgc,fitlongc),
@@ -391,16 +391,16 @@ B = dipoleMagneticField3D(Md,Rm,{x,y,z});
 
 fac = qOverM/gamma;
 
+% dt is now -dt/2 (to go backward in time for dt/2)
+h = -h/2;
 T = fac*[Bx,By,Bz]'*h/2;
-
+S = 2.0 * T /(1+T'*T);
 
 V = [vx,vy,vz]';
 R = [x,y,z]';
 
-V = V - cross(V,T);
-
-% don't forget to keep v constant
-V = V * vp/sqrt(sum(V.^2));
+v = V + cross(V,T);
+V = V + cross(v,S);
 
 r0 = [R;V];
 

@@ -15,7 +15,7 @@ function cmptraj_earth(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_earth.m,v 1.6 2018/06/15 17:27:29 patrick Exp $
+% $Id: cmptraj_earth.m,v 1.7 2018/07/13 16:48:32 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -316,18 +316,18 @@ subplot(211),
 plot(tfd,latfd,tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
 legend('FD','FDB','GC')
 
-[tbfd,dtbfd] = getbounceperiod(tfd,latfd,2*pi/Tb);
-[tbb,dtbb] = getbounceperiod(tb,latb,2*pi/Tb);
-[tbgc,dtbgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+[~,tbfd,dtbfd,~,~] = getbounceperiod(tfd,latfd,2*pi/Tb);
+[~,tbb,dtbb,~,~] = getbounceperiod(tb,latb,2*pi/Tb);
+[~,tbgc,dtbgc,~,~] = getbounceperiod(tgc,latgc,2*pi/Tb);
 
 subplot(212), 
 plot(tfd,lonfd,tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
 legend('FD','FDB','GC')
 
 
-[tdfd,dtdfd] = getdriftperiod(tfd,lonfd,2*pi/tbfd,360);
-[tdb,dtdb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[tdgc,dtdgc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+[~,tdfd,dtdfd,~] = getdriftperiod(tfd,lonfd,2*pi/tbfd,360);
+[~,tdb,dtdb,~] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+[~,tdgc,dtdgc,~] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
 
 drawnow
 
@@ -371,16 +371,16 @@ B = dipoleMagneticField3D(Md, Rm, {x,y,z});
 
 fac = qOverM/gamma;
 
+% dt is now -dt/2 (to go backward in time for dt/2)
+h = -h/2;
 T = fac*[Bx,By,Bz]'*h/2;
-
+S = 2.0 * T /(1+T'*T);
 
 V = [vx,vy,vz]';
 R = [x,y,z]';
 
-V = V - cross(V,T);
-
-% don't forget to keep v constant
-V = V * vp/sqrt(sum(V.^2));
+v = V + cross(V,T);
+V = V + cross(v,S);
 
 r0 = [R;V];
 
