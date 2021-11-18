@@ -49,7 +49,7 @@ function dipbtracer(planet,partype,Ep,Ri,ai,timespec,savefile,pauseOn,npertc)
 % but don't save the simulation data.
 
 %
-% $Id: dipbtracer.m,v 1.1 2018/07/13 16:50:52 patrick Exp $
+% $Id: dipbtracer.m,v 1.5 2019/06/20 15:41:34 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -81,7 +81,7 @@ switch (lower(planet)),
 		% Bthdip(mu=0,r=1)=8.176230e-01 -> 3.499426e-04
 		B0 = B0 * 8.176230e-01;
 	case 'saturn',
-	  Re = 60280.0e3;     % equatorial radius in m
+	  Re = 60268.0e3;     % equatorial radius in m
 		B0 = 21160.0e-9;    % (moment signed) magnetic equator field strength in T
 		% corrected to match magnetodisc file sat_mdisc_kh2e6_rmp25.mat
 		% Bthdip(mu=0,r=1)=8.923767e-01 -> 1.888269e-05
@@ -202,7 +202,7 @@ dt = diff(tb(1:2));
 fprintf(1,'tm=%.2g, tm/dt=%.2f tc/tm=%.2f, tc/dt=%.2f\n',...
         [tm,tm/dt,Tc/tm,Tc/dt]);
 
-if is_octave(),
+if exist('is_octave')==2 && is_octave(),
   fflush(1);
 end
 
@@ -270,7 +270,7 @@ legend({'FD','Initial'})
 
 % Compute latitude and longitude
 latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
-lonb = atan2d(Xb(:,2),Xb(:,1)); % atan(X/Y);
+lonb = 180/pi*unwrap(atan2(Xb(:,2),Xb(:,1))); % atan(X/Y);
 
 subplot(212), 
 %plot(tb,latb), xlabel('time'); ylabel('Latitude')
@@ -341,16 +341,16 @@ else
   drawnow
 end
 
-[kvgb,tbb,dtbb,lmb,fitlat] = getbounceperiod(tb,latb,2*pi/Tb);
+latfitb = getbounceperiod(tb,latb,2*pi/Tb);
 
 subplot(211),
-plot(tb,latb,tb,fitlat), xlabel('time'); ylabel('Latitude')
+plot(tb,latb,tb,latfitb.f), xlabel('time'); ylabel('Latitude')
 legend({'FD','FIT'})
 
-[kvgd,tdb,dtdb,fitlon] = getdriftperiod(tb,lonb,2*pi/tbb,360);
+lonfitb = getdriftperiod(tb,lonb,2*pi/latfitb.tb,360);
 
 subplot(212),
-plot(tb,lonb,tb,fitlon), xlabel('time'); ylabel('Longitude')
+plot(tb,lonb,tb,lonfitb.f), xlabel('time'); ylabel('Longitude')
 legend({'FD','FIT'})
 
 drawnow
@@ -361,8 +361,7 @@ if ~isempty(savefile), % save all trajectories
   save(savefile,'planet','Re','Be','Ep','Ri','ai','timespec',...
        'Tc','Tb','Td','Lm','tb','Xb',...
        'Zb','Rcylb','Rtotb','Eb','muib','latb','lonb',...
-       'kvgb','tbb','dtbb','lmb','fitlat',...
-       'kvgd','tdb','dtdb','fitlon');
+       'latfitb','lonfitb');
 end
 
 end
