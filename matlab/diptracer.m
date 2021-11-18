@@ -32,7 +32,7 @@ function diptracer(planet,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: diptracer.m,v 1.6 2018/07/13 16:49:49 patrick Exp $
+% $Id: diptracer.m,v 1.8 2019/06/20 15:41:34 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -73,7 +73,7 @@ switch (lower(planet)),
 		% Bthdip(mu=0,r=1)=8.176230e-01 -> 3.499426e-04
 		B0 = B0 * 8.176230e-01;
 	case 'saturn',
-	  Re = 60280.0e3;     % equatorial radius in m
+	  Re = 60268.0e3;     % equatorial radius in m
 		B0 = 21160.0e-9;    % (moment signed) magnetic equator field strength in T
 		% corrected to match magnetodisc file sat_mdisc_kh2e6_rmp25.mat
 		% Bthdip(mu=0,r=1)=8.923767e-01 -> 1.888269e-05
@@ -251,9 +251,9 @@ legend({'FD','GC','Initial'})
 
 % Compute latitude and longitude
 latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
-lonb = atan2d(Xb(:,2),Xb(:,1)); % atan(X/Y);
+lonb = 180/pi*unwrap(atan2(Xb(:,2),Xb(:,1))); % atan(X/Y);
 latgc = atan2d(Zgc,Rcylgc);
-longc = atan2d(Xgc(:,2),Xgc(:,1));
+longc = 180/pi*unwrap(atan2(Xgc(:,2),Xgc(:,1)));
 
 subplot(212), 
 %plot(tgc,Xgc(:,3)/Re), ylabel('z')
@@ -320,19 +320,19 @@ fprintf(1,'Ok, press return\n'),
 pause
 fprintf(1,'\n');
 
-[~,tbb,dtbb,lmb,fitlatb] = getbounceperiod(tb,latb,2*pi/Tb);
-[~,tbgc,dtbgc,lmgc,fitlatgc] = getbounceperiod(tgc,latgc,2*pi/Tb);
+latfitb = getbounceperiod(tb,latb,2*pi/Tb);
+latfitgc = getbounceperiod(tgc,latgc,2*pi/Tb);
 
 subplot(211),
-plot(tb,latb,tgc,latgc,tb,fitlatb,tgc,fitlatgc),
+plot(tb,latb,tgc,latgc,tb,latfitb.f,tgc,latfitgc.f),
 xlabel('time'); ylabel('Latitude')
 legend({'FD','GC','FITFD','FITGC'})
 
-[~,tdb,dtdb,fitlonb] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[~,tdgc,dtdgc,fitlongc] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+lonfitb = getdriftperiod(tb,lonb,2*pi/latfitb.tb,360);
+lonfitgc = getdriftperiod(tgc,longc,2*pi/latfitgc.tb,360);
 
 subplot(212),
-plot(tb,lonb,tgc,longc,tb,fitlonb,tgc,fitlongc),
+plot(tb,lonb,tgc,longc,tb,lonfitb.f,tgc,lonfitgc.f),
 xlabel('time'); ylabel('Longitude')
 legend({'FD','GC','FITFD','FITGC'})
 
@@ -345,8 +345,7 @@ if exist('savefile','var') & ~isempty(savefile), % save all trajectories
        'Tc','Tb','Td','Lm','tb','Xb','tgc','Xgc',...
        'Zb','Rcylb','Rtotb','Eb','muib','latb','lonb',...
        'Zgc','Rcylgc','Rtotgc','muigc','latgc','longc',...
-       'fitlatb','fitlonb','fitlatgc','fitlongc',...
-       'tbb','dtbb','tbgc','dtbgc','tdb','dtdb','tdgc','dtdgc','lmb','lmgc');
+       'latfitb','lonfitb','latfitgc','lonfitgc');
 end
 
 end
