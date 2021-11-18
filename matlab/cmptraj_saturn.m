@@ -15,7 +15,7 @@ function cmptraj_saturn(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_saturn.m,v 1.5 2018/07/13 16:48:32 patrick Exp $
+% $Id: cmptraj_saturn.m,v 1.7 2019/06/20 15:41:34 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -58,7 +58,7 @@ clear MDiscField
 load(MDFile,'MD');
 
 % Saturn equatorial radius in m
-%Re = 60280e3; 
+%Re = 60268.0e3
 Re = MD.planet.r0;
 
 % Saturn dipole field
@@ -279,11 +279,11 @@ legend('FD','FDB','GC','Initial')
 
 % Compute latitude and longitude
 latfd = atan2d(Zfd,Rcylfd);        % atan(Rcyl/Z)
-lonfd = atan2d(Xfd(:,2),Xfd(:,1)); % atan(X/Y);
+lonfd = 180/pi*unwrap(atan2(Xfd(:,2),Xfd(:,1))); % atan(X/Y);
 latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
-lonb = atan2d(Xb(:,2),Xb(:,1)); % atan(X/Y);
+lonb = 180/pi*unwrap(atan2(Xb(:,2),Xb(:,1))); % atan(X/Y);
 latgc = atan2d(Zgc,Rcylgc);
-longc = atan2d(Xgc(:,2),Xgc(:,1));
+longc = 180/pi*unwrap(atan2(Xgc(:,2),Xgc(:,1)));
 
 subplot(212), 
 %plot(tfd,Xfd(:,3)/Re,tgc,Xgc(:,3)/Re), ylabel('z')
@@ -359,18 +359,18 @@ subplot(211),
 plot(tfd,latfd,tb,latb,tgc,latgc), xlabel('time'); ylabel('Latitude')
 legend('FD','FDB','GC')
 
-[~,tbfd,dtbfd,~,~] = getbounceperiod(tfd,latfd,2*pi/Tb);
-[~,tbb,dtbb,~,~] = getbounceperiod(tb,latb,2*pi/Tb);
-[~,tbgc,dtbgc,~,~] = getbounceperiod(tgc,latgc,2*pi/Tb);
+latfitfd = getbounceperiod(tfd,latfd,2*pi/Tb);
+latfitb = getbounceperiod(tb,latb,2*pi/Tb);
+latfitgc = getbounceperiod(tgc,latgc,2*pi/Tb);
 
 subplot(212),
 plot(tfd,lonfd,tb,lonb,tgc,longc), xlabel('time'); ylabel('Longitude')
 legend('FD','FDB','GC')
 
 
-[~,tdfd,dtdfd,~] = getdriftperiod(tfd,lonfd,2*pi/tbfd,360);
-[~,tdb,dtdb,~] = getdriftperiod(tb,lonb,2*pi/tbb,360);
-[~,tdgc,dtdgc,~] = getdriftperiod(tgc,longc,2*pi/tbgc,360);
+lonfitfd = getdriftperiod(tfd,lonfd,2*pi/latfitfd.tb,360);
+lonfitb = getdriftperiod(tb,lonb,2*pi/latfitb.tb,360);
+lonfitgc = getdriftperiod(tgc,longc,2*pi/latfitgc.tb,360);
 
 drawnow
 
