@@ -1,17 +1,21 @@
-function [kvg,tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
-% function [kvg,tb,dtb,mplat,f] = getbounceperiod(t,x,omb)
+function fit = getbounceperiod(t,x,omb)
+% function fit = getbounceperiod(t,x,omb)
 %
-% t,x  : time series of latitudes or other periodic time series with bounce
-%        period
-% omb  : estimate for bounce frequency omega_b = 2\pi/\tau_b
-% kvg: fit status
-% tb: bounce period in seconds
-% dtb: std estimate for tb
-% mplat: mirror point latitude (maximum of latitude time series max(abs(x))
-% f: time series of model latitudes
+% t, x : time series of latitudes, t is in time unit, 
+%        latitude x is in angle unit
+%
+% omb  : estimate for bounce frequency omega_b = 2\pi/\tau_b [rad/time unit]
+%
+% fit  : stucture returned containing the following fields
+%        kvg  : fit status = 1 if convergence, = 0 otherwise
+%        r2   : coefficient of multiple determination
+%        tb   : bounce period [time unit]
+%        dtb  : standard deviation estimate for tb [time unit]
+%        mplat: mirror point latitude, max(abs(x) [angle unit]
+%        f    : time series of fitted latitudes
 
 %
-% $Id: getbounceperiod.m,v 1.3 2018/07/13 16:47:53 patrick Exp $
+% $Id: getbounceperiod.m,v 1.7 2019/06/12 15:19:10 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -60,8 +64,10 @@ tb = 2*pi/p(2);
 dtb = 2*pi*psd(2)/p(2)^2;
 mplat = max(abs(x));
 
-fprintf(1,'kvg=%d iter=%2d tb=%6.2f s (%.2g) lm=%.2f deg A=%.2f deg (%.2g)\n',...
-        kvg, iter, tb, dtb, mplat, p(1), psd(1));
+fprintf(1,'kvg=%d iter=%2d r2=%.2f tb=%6.2f s (%.2g) lm=%.2f deg A=%.2f deg (%.2g)\n',...
+        kvg, iter, r2,  tb, dtb, mplat, p(1), psd(1));
+
+fit = struct('kvg',kvg,'r2',r2,'tb',tb,'dtb',dtb,'mplat',mplat,'f',f);
 
 if 0,
 clf
