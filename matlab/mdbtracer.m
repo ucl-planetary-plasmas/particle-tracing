@@ -4,7 +4,8 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,npertc)
 % Magnetodisc Boris particle tracer
 %
 % mdfile   : magnetodisc mat-file filename.
-% partype  : particle type 'p' -> proton, 'e' -> electron
+% partype  : particle type 'p' -> proton, 'e' -> electron, 
+%            'O+', 'O++', 'S+', 'S++', 'S+++'.
 % Ep       : particle energy in MeV.
 % Ri       : initial particle equatorial position (in planet's radius Rp).
 % ai       : initial particle pitch angle (0..180 degrees).
@@ -48,7 +49,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,npertc)
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.9 2020/09/29 16:14:38 patrick Exp $
+% $Id: mdbtracer.m,v 1.10 2022/08/01 14:37:36 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -105,19 +106,42 @@ Md = [0,0,B0*Re^3];  % Magnetic moment \mu_0 M/(4\pi) in T m^3
 Rm = [0,0,0];        % Centered moment
 
 % SI constants
-e  = 1.60217733e-19; % elementary charge C
-eV = 1.60217733e-19; % conversion factor from eV to J
-c  = 299792458.0;    % speed of light m s^-1
+e   = 1.60217733e-19; % elementary charge C
+eV  = 1.60217733e-19; % conversion factor from eV to J
+c   = 299792458.0;    % speed of light m s^-1
+m_e = 9.1093897e-31;  % electron mass kg
+m_p = 1.6726231e-27;  % proton mass kg
+amu = 1.6605402e-27;  % atomic mass unit kg
 
 switch partype,
   case 'p', % proton
-	  parname = 'proton';
-    mp = 1.6726231e-27;  % proton mass kg
+    parname = 'proton';
+    mp = m_p;
     qp = e;
   case 'e', % electron
-	  parname = 'electron';
-    mp = 9.1093897e-31;  % electron mass kg
+    parname = 'electron';
+    mp = m_e;
     qp = -e;
+  case 'O+', % oxygen ion
+    parname = 'O+';
+    mp = 15.999 * amu;
+    qp = e;
+  case 'O++', % oxygen ion
+    parname = 'O++';
+    mp = 15.999 * amu;
+    qp = 2 * e;
+  case 'S+', % sulfur ion
+    parname = 'S+';
+    mp = 32.07 * amu;
+    qp = e;
+  case 'S++', % sulfur ion
+    parname = 'S++';
+    mp = 32.07 * amu;
+    qp = 2 * e;
+  case 'S+++', % sulfur ion
+    parname = 'S+++';
+    mp = 32.07 * amu;
+    qp = 3 * e;
 end
 
 EMeV = Ep*1e6*eV;      % particle energy in MeV
