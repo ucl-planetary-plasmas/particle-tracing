@@ -23,6 +23,20 @@
 # UCL model service site
 UCL="http://astroweb.projects.phys.ucl.ac.uk/models/"
 
+# files available
+# jup_mdisc_kh3e7_rmp60.mat 
+# jup_mdisc_kh3e7_rmp90.mat
+# sat_mdisc_kh1e7_rmp20.mat
+# sat_mdisc_kh1e7_rmp25.mat
+# sat_mdisc_kh1e7_rmp30.mat
+# sat_mdisc_kh2e6_rmp20.mat
+# sat_mdisc_kh2e6_rmp25.mat
+# sat_mdisc_kh2e6_rmp30.mat
+# sat_mdisc_kh5e5_rmp20.mat
+# sat_mdisc_kh5e5_rmp25.mat
+# sat_mdisc_kh5e5_rmp30.mat
+
+
 # -N Turn on time-stamping for wget
 # -# Progress meter for curl
 CMD="curl -#"
