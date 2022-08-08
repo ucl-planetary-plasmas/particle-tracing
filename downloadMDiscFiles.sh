@@ -27,7 +27,7 @@ UCL="http://astroweb.projects.phys.ucl.ac.uk/models/"
 # -# Progress meter for curl
 CMD="curl -#"
 
-files="jup_mdisc_kh3e7_rmp90.mat sat_mdisc_kh2e6_rmp25.mat"
+files="jup_mdisc_kh3e7_rmp90.mat jup_mdisc_kh3e7_rmp60.mat sat_mdisc_kh2e6_rmp25.mat"
 for f in $files; do
   if [ ! -e $f ] ; then
     echo "Downloading UCL Magnetodisc file $f"
