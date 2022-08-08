@@ -1,0 +1,20 @@
+language: python
+python:
+  - "3.7"
+  - "3.8"
+
+# command to install dependencies
+install:
+  # upgrade to a newer version of pip
+  - pip install --upgrade pip
+
+  # install dependencies for testing
+  - pip install pytest pytest-cov
+  - pip install pyyaml
+
+  # install the python package located in cwd
+  - pip install -e .
+
+# command to run tests
+script:
+  - pytest --cov=./ --doctest-modules #--cov-report html
