@@ -32,7 +32,7 @@ class Particle:
         self.EMeV = Ep * 1e6 * eV  # particle energy in MeV
         self.vp = np.sqrt(2 / self.mp * self.EMeV)  # classic velocity
         print(
-            f"classic v = {self.vp:.4e} m/s; E={0.5*mp*self.vp**2/(1e6*eV):.4e} MeV \n"
+            f"classic v = {self.vp:.4e} m/s; E={0.5*self.mp*self.vp**2/(1e6*eV):.4e} MeV \n"
         )
 
         self.vp = (
@@ -42,7 +42,7 @@ class Particle:
         )  # relativistic velocity
 
         print(
-            f"relativ v = {self.vp:.4e} m/s; E={(1/np.sqrt(1-self.vp**2/c**2)-1)*mp*c**2/(1e6*eV):.4e} MeV \n"
+            f"relativ v = {self.vp:.4e} m/s; E={(1/np.sqrt(1-self.vp**2/c**2)-1)*self.mp*c**2/(1e6*eV):.4e} MeV \n"
         )
         # velocity squared
         self.V2 = self.vp ** 2
