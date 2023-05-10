@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     for i in range(0, len(results["tb"])):
         if (
-            np.sqrt((results["Zb"][i]) * 2 + (results["Rcylb"][i]) * 2) / results["Re"]
+            np.sqrt((results["Zb"][i]) ** 2 + (results["Rcylb"][i]) ** 2) / results["Re"]
             <= 1.0
         ):
             print("Particle lost !")
