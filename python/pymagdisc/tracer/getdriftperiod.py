@@ -30,7 +30,7 @@ def getdriftperiod(t, x, omb, a4td):
     stol = 1e-6
     niter = 200
     minstep = [0, 0, 0, 0]
-    maxstep = [np.infty, np.infty, np.infty, np.infty]
+    maxstep = [np.inf, np.inf, np.inf, np.inf]
     options = [minstep, maxstep]
 
     # These are probably not needed
@@ -56,5 +56,5 @@ def getdriftperiod(t, x, omb, a4td):
     dtd = a4td * psd[3] / p[3] ** 2
     fitlon = F(t, *p)
 
-    print(f"Drfit: td={td:.2f}+-{dtd:.2f}")
+    print(f"Drift: td={td:.2f}+-{dtd:.2f}")
     return td, dtd, fitlon
