@@ -169,15 +169,19 @@ class MDBTracer:
         Yp = np.sin(ts)
 
         # *dipole* mirror point
-        rm = [
-            float(Xo[0] * np.cos(Lm * np.pi / 180) ** 3),
-            float(Xo[0] * (np.cos(Lm * np.pi / 180) ** 2) * np.sin(Lm * np.pi / 180)),
-            float(0),
-        ]
+        angle = np.deg2rad(Lm.item())  # cleaner than * np.pi / 180
+        coslm = np.cos(angle)
+        sinlm = np.sin(angle)
+
+        rm = np.array([
+            Xo[0] * coslm**3, 
+            Xo[0] * coslm**2 * sinlm,
+            0.0, 
+        ])
 
         print("Mirror point = ", rm)
 
-        if np.sqrt(rm[0] ** 2 + rm[1] ** 2) / self.Re < 1:
+        if np.sqrt(rm[0]**2 + rm[1]**2) / self.Re < 1:
             print(
                 f"Estimated mirror point within planet \n R= {(np.sqrt(rm[0]**2+rm[1]**2)/self.Re):.2f} < 1"
             )
@@ -186,16 +190,18 @@ class MDBTracer:
         # B from dipole
         B, gradB = dipoleMagneticField3D(self.Md, self.Rm, rm)
         # Gyro period at dipole mirror point
-        tm = float(2 * np.pi / (self.par.qOverM / self.par.gamma * np.sqrt(B[3])))
+        omega = (self.par.qOverM / self.par.gamma) * np.sqrt(B[3]).item()
+        tm = 2 * np.pi / omega
 
         # number of iteration such that dt \sim max([tm/3,Tc/5])
+        nsteps = int(np.ceil((self.tspan[-1] - self.tspan[0]) / (Tc / npertc)))
         tb = np.linspace(
             self.tspan[0],
             self.tspan[-1],
-            int(np.ceil(np.diff(self.tspan) / [Tc / npertc])),
+            nsteps,
         )
 
-        dt = float(tb[1] - tb[0])
+        dt = tb[1] - tb[0]
 
         # tc/tm ratio of gyro period at equator and dipole mirror point
         print(
@@ -401,10 +407,17 @@ class MDBTracer:
 
         # numerically
 
-        myfun = lambda x, a: np.cos(np.deg2rad(x)) ** 6 - np.sin(
-            np.deg2rad(a)
-        ) ** 2 * np.sqrt(1 + 3 * np.sin(np.deg2rad(x)) ** 2)
-        lm = fsolve(func=myfun, x0=[45], args=(alpha))
-        print(f"pitcheq={alpha:.2f}; lm={lm[0]:.2f} deg\n")
+        def myfun(x, a):
+            x = np.deg2rad(x[0])  # extract scalar from fsolve input
+            a = np.deg2rad(a)
+            return [
+                np.cos(x)**6
+                - np.sin(a)**2 * np.sqrt(1 + 3 * np.sin(x)**2)
+            ]
 
-        return abs(lm)
+        lm = fsolve(func=myfun, x0=[45], args=(alpha,))
+        lm_val = lm[0]
+
+        print(f"pitcheq={alpha:.2f}; lm={lm_val:.2f} deg\n")
+
+        return abs(lm_val)
