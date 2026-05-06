@@ -1,1 +1,1 @@
-PATH_TO_DATA = "../../"
+PATH_TO_DATA = "../../data/"

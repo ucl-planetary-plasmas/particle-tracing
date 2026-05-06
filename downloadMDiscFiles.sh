@@ -41,6 +41,12 @@ UCL="http://astroweb.projects.phys.ucl.ac.uk/models/"
 # -# Progress meter for curl
 CMD="curl -#"
 
+datadir="./data"
+
+if [ ! -e $datadir ] ; then
+  mkdir $datadir
+fi
+
 files="jup_mdisc_kh3e7_rmp90.mat \
 jup_mdisc_kh3e7_rmp60.mat \
 sat_mdisc_kh1e7_rmp20.mat \
@@ -52,9 +58,10 @@ sat_mdisc_kh2e6_rmp30.mat \
 sat_mdisc_kh5e5_rmp20.mat \
 sat_mdisc_kh5e5_rmp25.mat  \
 sat_mdisc_kh5e5_rmp30.mat"
+
 for f in $files; do
-  if [ ! -e $f ] ; then
+  if [ ! -e $datadir/$f ] ; then
     echo "Downloading UCL Magnetodisc file $f"
-		$CMD $UCL/mdisc/output/$f -o $f
+		$CMD $UCL/mdisc/output/$f -o $datadir/$f
 	fi
 done
