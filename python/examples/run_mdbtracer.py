@@ -1,4 +1,10 @@
 
+import matplotlib.pyplot as plt
+import sys
+import os
+
+sys.path.append("../")
+import pymagdisc
 from pymagdisc.bfield.magneticField3D import mdiscMagneticField3D
 from pymagdisc.vis.plot_compare_mdisc_dipole import plot_compare_mdisc_dipole
 from pymagdisc.vis.plot_compare_contours_alpha import plot_compare_contours_alpha
@@ -11,7 +17,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    mdfile = 'jup_mdisc_kh3e7_rmp90fix.mat' # magnetodisc mat-file
+    mdfile = 'jup_mdisc_kh3e7_rmp90.mat' # magnetodisc mat-file
     partype = 'p';                          # proton
     Ep = 100;                               # energy 100 MeV
     Ri = 4;                                 # initial equatorial distance 4*Rp

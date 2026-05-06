@@ -44,7 +44,7 @@ if __name__ == "__main__":
     savefile = runname + ".mat"
 
     # Load the magnetic field model, run the code and save the results in the file specified above
-    MD = load_model("../../" + mdfile)
+    MD = load_model("../../data/" + mdfile)
     tracer_jup = MDBTracer(
         mdfile=mdfile,
         partype=partype,
