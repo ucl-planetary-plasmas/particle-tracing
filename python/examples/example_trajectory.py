@@ -1,7 +1,5 @@
-import matplotlib.pyplot as plt
 import sys
 import os
-
 sys.path.append("../")
 import pymagdisc
 from pymagdisc.bfield.magneticField3D import mdiscMagneticField3D
