@@ -80,7 +80,7 @@ def dipoleMagneticField3D(m, rm, r) -> tuple:
 
 
 def mdiscMagneticField3D(r, MD, interpolator, compute_gradB=False):
-    """Calculate the 3D magnetodisc magnetic field at position r.
+    r"""Calculate the 3D magnetodisc magnetic field at position r.
 
     \vec{B}(\vec{m},\vec{r} ) = \frac{\mu_0}{4\pi r^3}
     \left(3(\vec{m}\cdot\vec{\hat{r}}) \vec{\hat{r}} -\vec{m} \right) +
