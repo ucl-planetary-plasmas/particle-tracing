@@ -20,6 +20,7 @@ setup(
         "scipy>=1.10",
         "matplotlib>=3.3",
         "tqdm>=4.66",
+        "pytest>=9.0.3",
     ],
 
     entry_points={
