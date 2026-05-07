@@ -319,7 +319,8 @@ class MDBTracer:
         r = np.array(r)
         rn = np.zeros(r.shape)
 
-        [x, y, z, vx, vy, vz] = [r[0], r[1], r[2], r[3], r[4], r[5]]
+        #[x, y, z, vx, vy, vz] = [r[0], r[1], r[2], r[3], r[4], r[5]]
+        x, y, z, vx, vy, vz = r
 
         B, _ = mdiscMagneticField3D(
             [x / self.Re, y / self.Re, z / self.Re],
