@@ -8,7 +8,7 @@ Title: test_load_data.py
 """
 import pytest
 import numpy as np
-from ..load_data import get_keys
+from pymagdisc.data.load_data import get_keys
 
 
 def test_get_keys():

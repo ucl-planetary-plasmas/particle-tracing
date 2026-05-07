@@ -1,4 +1,4 @@
-from ..magneticField3D import dipoleMagneticField3D, _calc_posn
+from pymagdisc.bfield.magneticField3D import dipoleMagneticField3D, _calc_posn
 import numpy as np
 import pytest
 
