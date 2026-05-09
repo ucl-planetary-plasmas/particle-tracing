@@ -1,17 +1,13 @@
 
-# Charged Particle Tracing in Planetary Magnetosphere (MATLAB + Python)
+# Charged Particle Tracing in Planetary Magnetospheres
 
 [![MATLAB](https://img.shields.io/badge/MATLAB-R20XX+-orange.svg)](https://www.mathworks.com/products/matlab.html)
 [![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-A dual MATLAB + Python framework for modelling charged particle motion in planetary magnetodisc environments (Earth, Jupiter, Saturn).
-Includes magnetic field models, particle tracing tools, and analysis utilities.
-
-
 This repository contains two independent implementations (MATLAB and Python)
 for simulating and analysing charged particle motion in planetary
-magnetosphere. Available planets are the gas giants (Jupiter and Saturn)
+magnetospheres. Available planets are the gas giants (Jupiter and Saturn)
 with the AGA magnetic field model (magnetodisc) and the Earth with its
 dipole field.  `particle-tracing` includes magnetic field models, particle
 tracing tools, and analysis utilities.
