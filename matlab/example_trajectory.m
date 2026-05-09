@@ -1,6 +1,6 @@
 function example_trajectory
 
-mdfile = '../jup_mdisc_kh3e7_rmp90'; % magnetodisc mat-file
+mdfile = '../data/jup_mdisc_kh3e7_rmp90'; % magnetodisc mat-file
 partype = 'S+';                    % proton
 Ep = 25;                         % energy 100 MeV
 Ri = 70;                           % initial equatorial distance 4*Rp
