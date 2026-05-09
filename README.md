@@ -5,12 +5,16 @@
 [![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-This repository contains two independent implementations (MATLAB and Python)
-for simulating and analysing charged particle motion in planetary
-magnetospheres. Available planets are the gas giants (Jupiter and Saturn)
-with the AGA magnetic field model (magnetodisc) and the Earth with its
-dipole field.  `particle-tracing` includes magnetic field models, particle
-tracing tools, and analysis utilities.
+The repository `particle-tracing` contains two independent implementations
+(MATLAB and Python) for simulating and analysing charged particle motion in
+planetary magnetospheres. 
+
+Available planets are the gas giants (Jupiter and
+Saturn) with the AGA magnetic field model (magnetodisc) and the Earth with
+a dipole magnetic field.  
+
+`particle-tracing` includes magnetic field models, particle tracing tools,
+and analysis utilities.
 
 
 ## 🚀 Key Features
