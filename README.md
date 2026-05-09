@@ -129,7 +129,7 @@ python examples/example_trajectory.py
 
 ---
 
-## 
+## 📊 Scientific Capabilities
 
 - Multi-planet magnetic field modelling (Earth, Jupiter, Saturn)
 - Particle trajectory tracing
