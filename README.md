@@ -1,12 +1,23 @@
 
-# Particle tracing framework (MATLAB + Python)
+# Charged Particle Tracing in Planetary Magnetosphere (MATLAB + Python)
+
+[![MATLAB](https://img.shields.io/badge/MATLAB-R20XX+-orange.svg)](https://www.mathworks.com/products/matlab.html)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+A dual MATLAB + Python framework for modelling charged particle motion in planetary magnetodisc environments (Earth, Jupiter, Saturn).
+Includes magnetic field models, particle tracing tools, and analysis utilities.
+
 
 This repository contains two independent implementations (MATLAB and Python)
-for simulating and analysing motion of charged particles in the gas giants
-(Jupiter and Saturn) magetosphere using the AGA magnetodisc model, along
-with shared datasets and utiliies
+for simulating and analysing charged particle motion in planetary
+magnetosphere. Available planets are the gas giants (Jupiter and Saturn)
+with the AGA magnetic field model (magnetodisc) and the Earth with its
+dipole field.  `particle-tracing` includes magnetic field models, particle
+tracing tools, and analysis utilities.
 
-## Overview
+
+## 🚀 Key Features
 
 The project provides tools to:
 
@@ -18,117 +29,98 @@ The project provides tools to:
 
 ---
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```text
 particle-tracing/
-├── data/
+├── data/                 # Dataset download utilities
 │   └── downloadMDiscFiles.sh
 │
-├── matlab/
+├── matlab/              # MATLAB implementation
 │   ├── cmptraj_earth.m
 │   ├── cmptraj_jupiter.m
 │   ├── cmptraj_saturn.m
 │   ├── dipbtracer.m
-│   ├── dipoleMagneticField3D.m
-│   ├── diptracer.m
-│   ├── example_trajectory.m
-│   ├── fitTb.m
-│   ├── fitTd.m
-│   ├── getBmoddipole.m
-│   ├── getbounceperiod.m
-│   ├── getBvectordipole.m
-│   ├── getdriftperiod.m
-│   ├── leasqr.m
 │   ├── mdbtracer.m
-│   ├── MDiscField.m
-│   ├── mdiscMagneticField3D.m
-│   ├── mdtracer.m
 │   ├── runs.m
 │   ├── testmdisc.m
-│   └── trajectory_main.m
+│   ├── example_trajectory.m
+│   └── ...
+
 │
-├── python/
-│   ├── dist/
-│   ├── examples/
-│   ├── LICENSE.txt
-│   ├── notebooks/
+├── python/              # Python implementation
 │   ├── pymagdisc/
+│   ├── tests/
+│   ├── examples/
+│   ├── notebooks/
 │   ├── pyproject.toml
-│   ├── README.md
-│   ├── requirements.txt
-│   ├── setup.cfg
 │   ├── setup.py
-│   └── tests/
+│   └── ...
 │
 └── README.md
 ```
 
 ---
 
-## Data
+## 📦 Data Setup
 
-The `data/` directory contains scripts for downloading required magnetodisc
-datasets (AGA Magnetodisc models)
+Download required magnetodisc datasets: the `data/` directory contains
+scripts for downloading required magnetodisc datasets (AGA Magnetodisc
+models)
 
-```bash
+```bash id="data_setup"
 bash data/downloadMDiscFiles.sh
 ```
 
 ---
 
-## MATLAB Usage
+## 🧪 MATLAB Usage
 
 
 ### Run example simulations
 
-```bash
+```bash id="matlab_example"
 cd matlab
 matlab -batch "example_trajectory"
 ```
 
-### Run full trajectory simulation
-
-```bash
-matlab -batch "trajectory_main"
-```
 
 ---
 
-## Python Usage
+## 🐍 Python Usage
 
 
 ### Installation
 
-```bash
+```bash id="py_install"
 cd python
 pip install .
 ```
 
-### Development installation
+### Development install
 
-```bash
+```bash id="py_dev"
 pip install -e .
 ```
 
 ### Run tests
 
-```bash
+```bash id="py_tests"
 pytest
 ```
 
 ### Run examples
 
-```bash
-python examples/example.py
+```bash id="py_examples"
+python examples/example_trajectory.py
 ```
 
 ---
 
-## Requirements
+## 📌 Requirements
 
 ### MATLAB
-- MATLAB R20XX+
+- MATLAB R20XX or newer
 - Required toolboxes (if applicable)
 
 ### Python
@@ -137,16 +129,15 @@ python examples/example.py
 
 ---
 
-## Features
+## 
 
-- Multi-planet magnetodisc modelling (Earth, Jupiter, Saturn)
+- Multi-planet magnetic field modelling (Earth, Jupiter, Saturn)
 - Particle trajectory tracing
-- Analytical and numerical field models
-- Cross-validation between MATLAB and Python implementations
+- Analysis / diagnostics of particle tracing
 
 ---
 
-## Citation
+## 📖 Citation
 
 If you use this software, please cite:
 
@@ -154,19 +145,29 @@ If you use this software, please cite:
 
 ---
 
-## License
+## 🤝 Contributing
 
-Add license information here.
+Contributions are welcome.
 
----
-
-## Authors
-
-- Patrick Guio
-- Contributors
+1. Fork repository
+2. Create feature branch
+3. Commit changes
+4. Open pull request
 
 ---
 
-## Acknowledgements
+## 📄 License
+
+Add license information here (e.g., MIT, GPL, etc.).
+
+---
+
+## 👤 Authors
+
+- Author: Patrick Guio <p.guio@ucl.ac.uk>
+- Contributors: 
+    - I Kit Cheng <i.cheng.19@ucl.ac.uk> 
+    - Dimitrios Millas <dimitrios.millas@ucl.ac.uk>
+
 
 
