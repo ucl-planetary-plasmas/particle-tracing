@@ -10,7 +10,7 @@ The repository `particle-tracing` contains two independent implementations
 planetary magnetospheres. 
 
 Available planets are the gas giants (Jupiter and
-Saturn) with the AGA (Achilleos, Guio and Arridge, 2010; [doi link](https://doi.org/10.1111/j.1365-2966.2009.15865.x)) magnetic field model (magnetodisc),
+Saturn) with the AGA (Achilleos, Guio and Arridge, 2010; [link](https://doi.org/10.1111/j.1365-2966.2009.15865.x)) magnetic field model (magnetodisc),
 and the Earth with a simple dipole magnetic field. 
 
 `particle-tracing` includes magnetic field models, particle tracing tools,
