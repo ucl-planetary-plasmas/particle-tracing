@@ -1,13 +1,20 @@
-# Particle tracing
 
-This is a software package to study the motion of charged particles in
-the magnetosphere of Jupiter and Saturn using the AGA magnetodisc model
+# Particle tracing framework (MATLAB + Python)
 
-This repository contains both:
+This repository contains two independent implementations (MATLAB and Python)
+for simulating and analysing motion of charged particles in the gas giants
+(Jupiter and Saturn) magetosphere using the AGA magnetodisc model, along
+with shared datasets and utiliies
 
-- a MATLAB implementation
-- a Python implementation
+## Overview
 
+The project provides tools to:
+
+- Visualise magnetic field models for planetary magnetodiscs
+- Trace charged particle trajectories
+- Compute bounce and drift periods
+- Compare results between MATLAB and Python implementations
+- Run example simulations for Earth, Jupiter, and Saturn
 
 ---
 
@@ -55,16 +62,111 @@ particle-tracing/
 │   └── tests/
 │
 └── README.md
-
-## AGA Magnetodisc models installation
-
-Run the commands
-
-```bash
-cd data
-./downloadMDiscFiles.sh
 ```
 
-## MATLAB version
+---
 
-## Python version
+## Data
+
+The `data/` directory contains scripts for downloading required magnetodisc
+datasets (AGA Magnetodisc models)
+
+```bash
+bash data/downloadMDiscFiles.sh
+```
+
+---
+
+## MATLAB Usage
+
+
+### Run example simulations
+
+```bash
+cd matlab
+matlab -batch "example_trajectory"
+```
+
+### Run full trajectory simulation
+
+```bash
+matlab -batch "trajectory_main"
+```
+
+---
+
+## Python Usage
+
+
+### Installation
+
+```bash
+cd python
+pip install .
+```
+
+### Development installation
+
+```bash
+pip install -e .
+```
+
+### Run tests
+
+```bash
+pytest
+```
+
+### Run examples
+
+```bash
+python examples/example.py
+```
+
+---
+
+## Requirements
+
+### MATLAB
+- MATLAB R20XX+
+- Required toolboxes (if applicable)
+
+### Python
+- Python 3.7+
+- pip
+
+---
+
+## Features
+
+- Multi-planet magnetodisc modelling (Earth, Jupiter, Saturn)
+- Particle trajectory tracing
+- Analytical and numerical field models
+- Cross-validation between MATLAB and Python implementations
+
+---
+
+## Citation
+
+If you use this software, please cite:
+
+> Add paper / DOI / reference here
+
+---
+
+## License
+
+Add license information here.
+
+---
+
+## Authors
+
+- Patrick Guio
+- Contributors
+
+---
+
+## Acknowledgements
+
+
