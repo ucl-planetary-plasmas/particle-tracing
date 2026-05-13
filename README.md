@@ -112,7 +112,8 @@ pytest
 ### Run examples
 
 ```bash id="py_examples"
-python examples/example_trajectory.py
+cd examples
+python example_trajectory.py
 ```
 
 ---
