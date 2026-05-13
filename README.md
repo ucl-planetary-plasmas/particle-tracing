@@ -159,7 +159,10 @@ Contributions are welcome.
 
 ## 📄 License
 
-Add license information here (e.g., MIT, GPL, etc.).
+## License
+
+This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) file for details.
+
 
 ---
 
