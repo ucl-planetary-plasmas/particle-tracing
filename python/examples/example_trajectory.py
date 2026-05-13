@@ -1,49 +1,50 @@
-import sys
-import os
-sys.path.append("../")
-import pymagdisc
-from pymagdisc.bfield.magneticField3D import mdiscMagneticField3D
-from pymagdisc.vis.plot_compare_mdisc_dipole import plot_compare_mdisc_dipole
-from pymagdisc.vis.plot_compare_contours_alpha import plot_compare_contours_alpha
-from pymagdisc.data.load_data import load_model
-from pymagdisc import config
-from pymagdisc.tracer.mdbtracer import MDBTracer
-from scipy.interpolate import RectBivariateSpline as interp2
-from scipy.io import savemat
+
+from pathlib import Path
+
 import numpy as np
+from scipy.io import savemat
 import matplotlib.pyplot as plt
+
+from pymagdisc import config
+from pymagdisc.data.load_data import load_model
+from pymagdisc.tracer.mdbtracer import MDBTracer
+
 
 if __name__ == "__main__":
 
     ### Change the following set of parameters
-    mdfile = "jup_mdisc_kh3e7_rmp90.mat"  # magnetodisc mat-file (rmp60 for compressed, rmp90 for expanded models)
-    partype = "S+"
+
+    # magnetodisc mat-file (rmp60 for compressed, rmp90 for expanded models)
+    mdfile = "jup_mdisc_kh3e7_rmp90.mat"  
     # particle type (select: p, e, O+, O++, S+, S++, S+++)
-    Ep = 25
+    partype = "S+"
     # initial energy (in MeV)
-    Ri = 70
+    Ep = 25
     # initial equatorial distance (in Jovian radii)
-    ai = 10
+    Ri = 70
     # initial pitch angle (in degrees)
-    timespec = [0, 0, 20, 0]
+    ai = 10
     # run for x dipole bounce periods (modify the third element)
-    npertc = 20  # number of Boris iterations per gyroperiod (~ points used per bounce)
-    mdisctype = (
-        "exp"  # Type 'exp' for expanded or 'comp' for compressed magnetosphere models
-    )
+    timespec = [0, 0, 20, 0]
+    # number of Boris iterations per gyroperiod (~ points used per bounce)
+    npertc = 20  
+    # Type 'exp' for expanded or 'comp' for compressed magnetosphere models
+    mdisctype = "exp"
 
     # --- Do not modify the following unless necessary! ---
+
     # The code block below creates a text ("string" in python terminology), based on the parameters above
-    runname = (
-        partype + "Ri" + str(Ri) + "_Ep" + str(Ep) + "_ai" + str(ai) + "" + mdisctype
-    )
+    runname = partype + "Ri" + str(Ri) + "_Ep" + str(Ep) + "_ai" + str(ai) + "" + mdisctype
+
     # This creates the name of the file
     # Choose to save the results in a "mat" file
     savefile = runname + ".mat"
 
     # Load the magnetic field model, run the code and save the results in the file specified above
-    MD = load_model("../../data/" + mdfile)
-    tracer_jup = MDBTracer(
+    md_path = Path(config.PATH_TO_DATA) / mdfile
+    MD = load_model(md_path)
+
+    tracer = MDBTracer(
         mdfile=mdfile,
         partype=partype,
         Ep=Ep,
@@ -51,20 +52,24 @@ if __name__ == "__main__":
         ai=ai,
         timespec=timespec,
         savefile=savefile,
-        npertc=npertc,
-    )
-    results = tracer_jup.run_simul()
-    # Save the file in the folder 'results'
-    # savemat('./results/'+savefile,results)
+        npertc=npertc)
+
+    res = tracer.run_simul()
+
+    # Create output directory if needed
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True)
+
+    # Save output data
+    output_path = results_dir / f"{savefile}.mat"
+    savemat(output_path,res)
 
     # Plot the trajectory of the particle
     fig = plt.figure(figsize=(4, 4), dpi=120)
-    plt.plot(results["Rcylb"] / results["Re"], results["Zb"] / results["Re"], "-")
+    plt.plot(res["Rcylb"] / res["Re"], res["Zb"] / res["Re"], "-")
     plt.xlabel(r"rc ($R_J$)")
     plt.ylabel(r"z ($R_J$)")
-    plt.xlim(
-        min(results["Zb"] / results["Re"] + 2), max(results["Zb"] / results["Re"] + 2)
-    )
+    plt.xlim(min(res["Zb"] / res["Re"] + 2), max(res["Zb"] / res["Re"] + 2))
 
     plt.title(r"Trajectory: {}, E={} MeV, Ri={} RJ, ai={}°".format(partype, Ep, Ri, ai))
 
@@ -74,17 +79,18 @@ if __name__ == "__main__":
     # plt.savefig('./plots/trajectory_'+runname+'.png',bbox_inches="tight")
     plt.show()
 
-    for i in range(0, len(results["tb"])):
+    for i in range(0, len(res["tb"])):
         if (
-            np.sqrt((results["Zb"][i]) ** 2 + (results["Rcylb"][i]) ** 2) / results["Re"]
+            np.sqrt((res["Zb"][i])** 2 + (res["Rcylb"][i])** 2) / res["Re"]
             <= 1.0
         ):
             print("Particle lost !")
 
     fig = plt.figure(figsize=(4, 4), dpi=120)
-    plt.plot(results["tb"] / 60, results["pitchan"])
+    plt.plot(res["tb"] / 60, res["pitchan"])
     plt.xlabel("Time (min)")
     plt.ylabel(r"$\alpha$")
     plt.title("Pitch angle: {}, E={} MeV, Ri={} RJ, ai={}°".format(partype, Ep, Ri, ai))
     # plt.savefig('./plots/pitch_angle'+runname+'.png',bbox_inches="tight")
     plt.show()
+
