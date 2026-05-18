@@ -51,7 +51,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.11 2026/05/08 15:22:59 patrick Exp $
+% $Id: mdbtracer.m,v 1.12 2026/05/18 17:02:55 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -273,16 +273,28 @@ if exist('gpuArray','builtin'),
   Xgb = gpuArray(Xgb);
   Xgf = gpuArray(Xgf);
 end
+
 Xb(1,:) = BorisInit(Xo,dt);
 Xf(1,:) = Xb(1,:);
 Xgb(1,:) = Xb(1,1:3)-[rg,0,0];
 Xgf(1,:) = Xgb(1,:);
-for i=1:length(tb)-1
+
+backspaces = '';
+niter = length(tb)-1;
+frq = fix(niter/20); % every 5% (100/20)
+for i=1:niter,
   Xb(i+1,:) = BorisIter(Xb(i,:),dt);
   Xf(i+1,:) = FullBorisIter(Xf(i,:),dt);
   [Xgb(i+1,:),rgb(i+1,:)] = getGyroRadius(Xb(i,1:3),.5*(Xb(i,4:6)+Xb(i+1,4:6)));
   [Xgf(i+1,:),rgf(i+1,:)] = getGyroRadius(Xf(i,1:3),.5*(Xf(i,4:6)+Xf(i+1,4:6)));
+	if mod(i,frq)==0,
+	  progStr = sprintf('Progress: %3d %%%%',fix(i/niter*100)+1);
+		fprintf([backspaces,progStr]);
+		backspaces = repmat('\b',1,length(progStr));
+	end
 end
+progStr = sprintf('Progress: %3d %%%%\n',fix(i/niter*100));
+fprintf([backspaces,progStr]);
 
 Zb    = Xb(:,3);
 Rcylb = sqrt(Xb(:,1).^2+Xb(:,2).^2);
