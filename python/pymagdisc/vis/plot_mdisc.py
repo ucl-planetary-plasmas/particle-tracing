@@ -1,12 +1,8 @@
 # Description: Plot magnetodisc model.
 
 import numpy as np
-from scipy import interpolate
 import matplotlib.pyplot as plt
-import argparse
-from pymagdisc.data.load_data import load_model
 from pymagdisc.analysis.physics import calc_Pcold, calc_beta, calc_Jphi
-from pymagdisc import config
 import warnings
 
 warnings.filterwarnings("ignore")

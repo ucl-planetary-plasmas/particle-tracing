@@ -1,17 +1,8 @@
 # Description: Plot contours of magnetic potential for mdisc and dipole model.
 
 import numpy as np
-from scipy import interpolate
 import matplotlib.pyplot as plt
-import argparse
 from pymagdisc.data.load_data import load_model
-from pymagdisc.analysis.physics import calc_Pcold, calc_beta, calc_Jphi
-from pymagdisc.bfield.magneticField3D import (
-    mdiscMagneticField3D,
-    dipoleMagneticField3D,
-    MDiscField,
-    _calc_posn,
-)
 from pymagdisc import config
 import warnings
 from scipy.interpolate import RectBivariateSpline as interp2

@@ -1,15 +1,13 @@
 # Description: Plot magnetodisc vs dipole model.
 
 import numpy as np
-from scipy import interpolate
 import matplotlib.pyplot as plt
-import argparse
 from pymagdisc.data.load_data import load_model
-from pymagdisc.analysis.physics import calc_Pcold, calc_beta, calc_Jphi
 from pymagdisc.bfield.magneticField3D import (
     mdiscMagneticField3D,
     dipoleMagneticField3D,
-    magneticFieldInterpolator)
+    magneticFieldInterpolator,
+)
 from pymagdisc import config
 import warnings
 
@@ -33,7 +31,7 @@ def plot_compare_mdisc_dipole(MDFile="jup_mdisc_kh3e7_rmp90fix.mat"):
 
     # corrected to match dipole value in the magnetodisc file
     B0 = MD["planet"]["B0"] * MD["v2d"]["Bthdip"][MD["dims"]["imu0"] - 1, 0]
-    Md = [0, 0, B0 * Re ** 3]  # Magnetic moment (z-aligned)
+    Md = [0, 0, B0 * Re**3]  # Magnetic moment (z-aligned)
     Rd = [0, 0, 0]  # Centered moment (no offset)
 
     p = 0
@@ -71,7 +69,9 @@ def plot_compare_mdisc_dipole(MDFile="jup_mdisc_kh3e7_rmp90fix.mat"):
         z = r[ir] * np.sin(t[ir])
 
         # plot mdisc field
-        B, gradB = mdiscMagneticField3D([x, y, z], MD=MD, interpolator=interpolator, compute_gradB=True)
+        B, gradB = mdiscMagneticField3D(
+            [x, y, z], MD=MD, interpolator=interpolator, compute_gradB=True
+        )
         b = np.sqrt(B[0] ** 2 + B[1] ** 2 + B[2] ** 2)
         db = np.sqrt(gradB[0] ** 2 + gradB[1] ** 2 + gradB[2] ** 2)
         ax[0].quiver(
