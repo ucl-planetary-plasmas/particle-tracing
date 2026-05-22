@@ -51,7 +51,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.12 2026/05/18 17:02:55 patrick Exp $
+% $Id: mdbtracer.m,v 1.13 2026/05/22 14:26:45 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -184,10 +184,10 @@ qOverM = qp/mp;
 % factor mu/gamma^2/m for guiding centre Eq.23 of Ozturk 2012
 facdv = mu/gamma^2/mp; 
 tspan = [0,sum(timespec.*[1,Tc,Tb,Td])];
-fprintf(1,'tmax=%.2f (%.1f tc, %.2f tb, %.2f td)\n',...
+fprintf(1,'tmax=%.10g (%.10g tc, %.10g tb, %.10g td)\n',...
         tspan(end)./[1,Tc,Tb,Td]);
 
-trace(X,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,npertc);
+trace(X,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,plotOn,npertc);
 
 function [Xo,mu,tc,tb,td,lm,rg]=init(R,v,alpha)
 
@@ -207,7 +207,7 @@ vper = sqrt(V2-vpar^2);
 
 % gyro radius at equator
 rg = abs(gamma/qOverM*vper/b);
-fprintf(1,'rg=%.1g Re\n', rg/Re);
+fprintf(1,'rg=%.4gRe\n', rg/Re);
 
 % first invariant mu
 mu = gamma^2*mp*vper^2/(2*b);
@@ -228,7 +228,7 @@ end
 	
 end
 
-function trace(Xo,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,npertc)
+function trace(Xo,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,plotOn,npertc)
 
 % Planet's surface
 ts = linspace(0,2*pi,100);
@@ -237,6 +237,7 @@ Yp = sin(ts);
 
 % *dipole* mirror point 
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
+fprintf(1,'Mirror point = [%12g, %12g, %12g] Re\n', cell2mat(rm)/Re);
 if sqrt(rm{1}^2+rm{2}^2)/Re < 1,
   error(sprintf('%s R=%.2f < 1\n%s',...
         'Estimated mirror point within planet',...
@@ -250,10 +251,12 @@ B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at dipole mirror point
 tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
 % number of iteration such that dt \sim max([tm/3,Tc/5])
-tb = linspace(tspan(1),tspan(end),ceil(diff(tspan)./[Tc/npertc]))';
+nsteps = ceil(diff(tspan)/(Tc/npertc));
+fprintf(1,'%.10g %.10g %.10g %.10g\n',tspan(1),tspan(end),Tc,nsteps)
+tb = linspace(tspan(1),tspan(end),nsteps)';
 dt = diff(tb(1:2));
 % tc/tm ratio of gyro period at equator and dipole mirror point 
-fprintf(1,'tm=%.2g, tm/dt=%.2f tc/tm=%.2f, tc/dt=%.2f\n',...
+fprintf(1,'tm=%.6g, tm/dt=%.6f tc/tm=%.6f, tc/dt=%.6f\n',...
         [tm,tm/dt,Tc/tm,Tc/dt]);
 
 if exist('is_octave')==2 && is_octave(),
@@ -272,29 +275,60 @@ if exist('gpuArray','builtin'),
   Xf = gpuArray(Xf);
   Xgb = gpuArray(Xgb);
   Xgf = gpuArray(Xgf);
+	rgb = gpuArray(rgb);
+	rgf = gpuArray(rgf);
 end
 
 Xb(1,:) = BorisInit(Xo,dt);
 Xf(1,:) = Xb(1,:);
-Xgb(1,:) = Xb(1,1:3)-[rg,0,0];
+
+%rgb(1,:) = [rg,0,0];
+%Xgb(1,:) =  Xb(1,1:3)-rgb(1,:);
+%rgb(1,:)/Re,Xgb(1,:)/Re
+
+[Xgb(1,:),rgb(1,:)] = getGyroRadius(Xb(1,1:3),.5*(Xb(1,4:6)+Xb(1,4:6)));
+rgb(1,2:3) = 0; % initially along x-axis
+%rgb(1,:)/Re,Xgb(1,:)/Re
+
+rgf(1,:) = rgb(1,:);
 Xgf(1,:) = Xgb(1,:);
 
 backspaces = '';
 niter = length(tb)-1;
-frq = fix(niter/20); % every 5% (100/20)
+frq = fix(niter/20); % 20 -> every 5% (100/20)
+tic
 for i=1:niter,
   Xb(i+1,:) = BorisIter(Xb(i,:),dt);
-  Xf(i+1,:) = FullBorisIter(Xf(i,:),dt);
   [Xgb(i+1,:),rgb(i+1,:)] = getGyroRadius(Xb(i,1:3),.5*(Xb(i,4:6)+Xb(i+1,4:6)));
-  [Xgf(i+1,:),rgf(i+1,:)] = getGyroRadius(Xf(i,1:3),.5*(Xf(i,4:6)+Xf(i+1,4:6)));
 	if mod(i,frq)==0,
-	  progStr = sprintf('Progress: %3d %%%%',fix(i/niter*100)+1);
+	  progStr = sprintf('Progress: %d/%d [%3d%%%%]',i,niter,round(i/niter*100));
 		fprintf([backspaces,progStr]);
 		backspaces = repmat('\b',1,length(progStr));
 	end
 end
-progStr = sprintf('Progress: %3d %%%%\n',fix(i/niter*100));
+elapsed = toc;
+progStr = sprintf('Progress: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
+                  i,niter,round(i/niter*100), elapsed,niter/elapsed);
 fprintf([backspaces,progStr]);
+
+tic
+for i=1:niter,
+  Xf(i+1,:) = FullBorisIter(Xf(i,:),dt);
+  [Xgf(i+1,:),rgf(i+1,:)] = getGyroRadius(Xf(i,1:3),.5*(Xf(i,4:6)+Xf(i+1,4:6)));
+  if mod(i,frq)==0,
+    progStr = sprintf('Progress: %d/%d [%3d%%%%]',i,niter,round(i/niter*100));
+    fprintf([backspaces,progStr]);
+    backspaces = repmat('\b',1,length(progStr));
+  end
+end
+elapsed = toc;
+progStr = sprintf('Progress: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
+                  i,niter,round(i/niter*100), elapsed,niter/elapsed);
+fprintf([backspaces,progStr]);
+
+%Xgb(1:5,:)/Re,rgb(1:5,:)/Re
+%Xgf(1:5,:)/Re,rgf(1:5,:)/Re
+
 
 Zb    = Xb(:,3);
 Rcylb = sqrt(Xb(:,1).^2+Xb(:,2).^2);
@@ -338,6 +372,10 @@ end
 
 % Kinetic energy in eV for Full Dynamic Boris
 v2b = sum(Xb(:,[4:6])'.^2)';
+%v2bc = v2b-mean(v2b);
+%fprintf(1,'v2b %10g %10g\n',mean(v2b), var(v2b))
+%fprintf(1,'v2bc %10g %10g\n',mean(v2bc), var(v2bc))
+%save('v2b_mat','v2b','v2bc')
 v2f = sum(Xf(:,[4:6])'.^2)';
 %v2b1 = Vx.^2+Vy.^2+Vz.^2;
 %size(v2b),size(v2b1)
@@ -356,10 +394,12 @@ Ef = Ef1+Ef2;
 % mean and variance
 meanEb = mean(Eb);
 stdEb = std(Eb);
-fprintf(1,'<Eb> = %10g MeV, std(E) = %10g eV\n', meanEb/1e6, stdEb);
+fprintf(1,'<Eb> = %10g MeV, std(E) = %10g eV std(E)/<Eb> = %10g\n',...
+        meanEb/1e6, stdEb, stdEb/meanEb);
 meanEf = mean(Ef);
 stdEf = std(Ef);
-fprintf(1,'<Ef> = %10g MeV, std(E) = %10g eV\n', meanEf/1e6, stdEf);
+fprintf(1,'<Ef> = %10g MeV, std(E) = %10g eV std(E)/<Ef> = %10g\n',...
+        meanEf/1e6, stdEf, stdEf/meanEf);
 if plotOn,
 subplot(311)
 plot(tb,Eb,tb,Ef,tb,Ef1); 
@@ -513,6 +553,7 @@ end
 
 % bounce period fit
 
+fprintf(1,'**** Bounce period Boris\n');
 % identify zero crossings
 izc = find(latb(1:end-1).*latb(2:end)<0);
 % average time between zero-crossings times 2 = exact period
@@ -523,7 +564,6 @@ Tbi= (Tb+2*Tbe)/3;
 % exact period
 Tbi= Tbe;
 if isfinite(Tbe),
-fprintf(1,'**** Bounce period Boris\n');
 fprintf(1,'Init Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,Tbe,Tbi);
 latfitb = getbounceperiod(tb,latb,2*pi/Tbi);
 latfitb1 = fitTb(tb,latb,Tbi);
@@ -532,6 +572,7 @@ latfitb = [];
 latfitb1 = [];
 end
 
+fprintf(1,'**** Bounce period FullBoris\n');
 % identify zero crossings
 izc = find(latf(1:end-1).*latf(2:end)<0);
 Tbe = 2*mean(diff(tb(izc)));
@@ -539,7 +580,6 @@ Tbe = 2*mean(diff(tb(izc)));
 Tbi= (Tb+2*Tbe)/3;
 Tbi= Tbe;
 if isfinite(Tbe),
-fprintf(1,'**** Bounce period FullBoris\n');
 fprintf(1,'Init Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,Tbe,Tbi);
 latfitf = getbounceperiod(tb,latf,2*pi/Tbi);
 latfitf1 = fitTb(tb,latf,Tbi);
@@ -583,13 +623,14 @@ end
 if ~isempty(savefile), % save all trajectories
   Be = mdiscMagneticField3D(Rm,{Re/Re,0,0});
   Be = sqrt(Be{4});
+	fprintf(1,'Results saved to: %s\n',savefile);
   save(savefile,'mdfile','Re','Be','partype','parname','Ep','Ri','ai',...
        'gamma','qOverM','Vpc','Vpr',...
-       'Omega','Omp','timespec',...
-       'Tc','Tb','Td','Lm','rg','tb','Xb',...
+       'Omega','Omp','timespec','npertc',...
+       'Tc','Tb','Td','Lm','rg',...
+			 'tb','Xb','Xf','Xgb','rgb','Xgf','rgf',...
        'Zb','Rcylb','Rtotb','Eb','muib','aib','latb','lonb','Vparb','Vperb',...
        'Zf','Rcylf','Rtotf','Ef','muif','aif','latf','lonf','Vparf','Vperf',...
-			 'Xgb','rgb','Xgf','rgf',...
 			 'latfitb','latfitf','lonfitb','lonfitf');
 end
 
@@ -598,20 +639,26 @@ end
 function rn = FullBorisIter(r,h)
 
 %rn = zeros(size(r));
-[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-[Bx,By,Bz] = deal(B{1:3});
+%[Bx,By,Bz] = deal(B{1:3});
+Bx = B{1}; By = B{2}; Bz = B{3};
 
 fac = qOverM/gamma;
 
 %T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
-T = fac*[Bx,By,Bz]'*h/2;
+Bxyz = [Bx; By; Bz];
+T = (fac*h/2) * Bxyz;
+%T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 
-V = [vx,vy,vz]';
-R = [x,y,z]';
+%V = [vx,vy,vz]';
+%R = [x,y,z]';
+R = r(1:3)';
+V = r(4:6)';
 
 % https://en.wikipedia.org/wiki/Centrifugal_force
 % Centrifugal force dv/dt = -\omega x (\omega x r) 
@@ -631,8 +678,8 @@ dV = -cross(Omp,cross(Omp,R))*h/2;
 vm = V+dV;
 vp = vm + cross(vm,T);
 vp = vm + cross(vp,S);
-V = vp+dV;
 
+V = vp+dV;
 R = R + V*h;
 
 rn = [R;V];
@@ -642,20 +689,26 @@ end
 function rn = BorisIter(r,h)
 
 %rn = zeros(size(r));
-[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-[Bx,By,Bz] = deal(B{1:3});
+%[Bx,By,Bz] = deal(B{1:3});
+Bx = B{1}; By = B{2}; Bz = B{3};
 
 fac = qOverM/gamma;
 
 %T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
-T = fac*[Bx,By,Bz]'*h/2;
+Bxyz = [Bx; By; Bz];
+T = (fac*h/2) * Bxyz;
+%T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 
-V = [vx,vy,vz]';
-R = [x,y,z]';
+%R = [x,y,z]';
+%V = [vx,vy,vz]';
+R = r(1:3)';
+V = r(4:6)';
 
 v = V + cross(V,T);
 V = V + cross(v,S);
@@ -672,11 +725,13 @@ function r0 = BorisInit(r,h)
 
 r0 = zeros(size(r));
 
-[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
+x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-[Bx,By,Bz] = deal(B{1:3});
+%[Bx,By,Bz] = deal(B{1:3});
+Bx = B{1}; By = B{2}; Bz = B{3};
 
 fac = qOverM/gamma;
 
@@ -765,29 +820,38 @@ function [Xg,rg] = getGyroRadius(Rp,Vp)
 
 tol = 1e-10;
 
+Rp = Rp(:);
+Vp = Vp(:);
+
 rg2 = 0;
-relerr = 1;
+relerr = Inf;
 
 % initial position of guiding centre
 Xg = Rp;
 
-while relerr>tol,
+fac = -gamma/qOverM;
+
+while relerr > tol,
 
 % magnetic field at guiding centre position
 B = mdiscMagneticField3D(Rm,{Xg(1)/Re,Xg(2)/Re,Xg(3)/Re});
-[Bx,By,Bz] = deal(B{1:3});
+%[Bx,By,Bz] = deal(B{1:3});
+Bx = B{1}; By = B{2}; Bz = B{3};
 b2 = B{4};
 
-% parallel and perpendicular projection of 
-Vppar = ([Bx,By,Bz]*Vp')/b2*[Bx,By,Bz];
+Bxyz = [Bx; By; Bz];
+
+% parallel and perpendicular projection 
+Vppar = (dot(Bxyz,Vp)/b2) * Bxyz;
 Vpper = Vp-Vppar;
 
 % gyro radius rg = -gamma m/q (Vper x B)/B^2
-rg = -gamma/qOverM*cross(Vpper,[Bx,By,Bz]')/b2;
+rg = fac * cross(Vpper,Bxyz)/b2;
 
 oldrg2 = rg2;
-rg2 = rg*rg';
-relerr = abs(rg2-oldrg2)/rg2;
+rg2 = dot(rg,rg);
+
+relerr = abs(rg2-oldrg2)/max(rg2,eps);
 
 Xg = Rp-rg;
 
