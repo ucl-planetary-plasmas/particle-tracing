@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on 2021-10-23 
+Created on 2021-10-23
 
 @author: I Kit Cheng
 
 Title: test_load_data.py
 """
-import pytest
+
 import numpy as np
 from pymagdisc.data.load_data import get_keys
 

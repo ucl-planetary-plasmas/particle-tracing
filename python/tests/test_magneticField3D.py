@@ -64,14 +64,14 @@ def test_dipoleMagneticField3D_B_calc(m, rm, r):
     B, _ = dipoleMagneticField3D(m, rm, r)
 
     # radial distance from z-axis in cylindrical coord
-    Rcyl = np.sqrt(X ** 2 + Y ** 2)
+    Rcyl = np.sqrt(X**2 + Y**2)
 
     # colatitude
     theta = np.pi / 2 - np.arctan2(Z, Rcyl)
 
     # cos and sin of colatitude
     cost = Z / R
-    sint = np.sqrt(1 - cost ** 2)
+    sint = np.sqrt(1 - cost**2)
 
     # B radial and tangential
     Br = m[2] / R3 * 2 * cost
@@ -167,7 +167,7 @@ def test_dipoleMagneticField3D_gradB_calc(m, rm, r):
     B, gradB = dipoleMagneticField3D(m, rm, r)
 
     # radial distance from z-axis in cylindrical coord
-    Rcyl = np.sqrt(X ** 2 + Y ** 2)
+    Rcyl = np.sqrt(X**2 + Y**2)
 
     # colatitude
     theta = np.pi / 2 - np.arctan2(Z, Rcyl)
@@ -189,20 +189,16 @@ def test_dipoleMagneticField3D_gradB_calc(m, rm, r):
     dr = 2 * R * EPS
 
     # gradient with respect to r
-    dBdr = m[2] * (1 / rp ** 3 - 1 / rm ** 3) / dr * np.sqrt(1 + 3 * cost ** 2)
+    dBdr = m[2] * (1 / rp**3 - 1 / rm**3) / dr * np.sqrt(1 + 3 * cost**2)
 
     mup = cost * (1 + EPS) + EPS
     mum = cost * (1 - EPS) - EPS
     rdmu = R * (mup - mum)
-    dmudt = -np.sqrt(1 - cost ** 2)
+    dmudt = -np.sqrt(1 - cost**2)
 
     # gradient with respect to theta
     dBdt = (
-        m[2]
-        / R3
-        * (np.sqrt(1 + 3 * mup ** 2) - np.sqrt(1 + 3 * mum ** 2))
-        / rdmu
-        * dmudt
+        m[2] / R3 * (np.sqrt(1 + 3 * mup**2) - np.sqrt(1 + 3 * mum**2)) / rdmu * dmudt
     )
     gradBx = (dBdr * coslat + dBdt * sinlat) * coslon
     gradBy = (dBdr * coslat + dBdt * sinlat) * sinlon
