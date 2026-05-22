@@ -10,12 +10,25 @@ def magneticFieldInterpolator(MD):
     Returns:
         interpolator (dict): Interpolators for Br, Bth, and B.
     """
-    MD_Br = MD["v2d"]["Br"] * MD["scales"]["bfield"]
-    MD_Bth = MD["v2d"]["Bth"] * MD["scales"]["bfield"]
-    MD_B = MD["v2d"]["B"] * MD["scales"]["bfield"]
+    opts = ("cubic", "cubic")
+
+    print(f"Generating field functions ({opts[0]},{opts[1]}) from ", end="")
+    print("magnetodisk field ... ", end="")
+
+    R = MD["c2d"]["r"][0, :]
+    Mu = MD["c2d"]["mu"][:, 0]
 
     interpolator = {key: None for key in ["Br", "Bth", "B"]}
-    interpolator["Br"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_Br.T)
-    interpolator["Bth"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_Bth.T)
-    interpolator["B"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_B.T)
+
+    Br = MD["v2d"]["Br"] * MD["scales"]["bfield"]
+    interpolator["Br"] = interp2(R, Mu, Br.T, kx=3, ky=3)
+
+    Bth = MD["v2d"]["Bth"] * MD["scales"]["bfield"]
+    interpolator["Bth"] = interp2(R, Mu, Bth.T)
+
+    B = MD["v2d"]["B"] * MD["scales"]["bfield"]
+    interpolator["B"] = interp2(R, Mu, B.T)
+
+    print("done.")
+
     return interpolator

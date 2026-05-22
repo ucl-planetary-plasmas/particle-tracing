@@ -1,7 +1,5 @@
 import numpy as np
 from scipy.interpolate import RectBivariateSpline as interp2
-from pymagdisc.data.load_data import load_model
-from pymagdisc import config
 
 
 def _calc_posn(m, rm, r):
@@ -26,13 +24,13 @@ def _calc_posn(m, rm, r):
     r0 = np.array([X, Y, Z])
 
     # modulus square
-    R2 = X ** 2 + Y ** 2 + Z ** 2
+    R2 = X**2 + Y**2 + Z**2
 
     # modulus
-    R = R2 ** 0.5
+    R = R2**0.5
 
     # modulus cube
-    R3 = R2 ** 1.5
+    R3 = R2**1.5
 
     # normalised direciton
     rnorm = np.array([X / R, Y / R, Z / R])
@@ -65,16 +63,16 @@ def dipoleMagneticField3D(m, rm, r) -> tuple:
     B[0:3, :] = (3 * mDotR * rnorm - m) / R3
 
     # |B|^2
-    B[3, :] = (3 * mDotR ** 2 + np.sum(m ** 2)) / R3 ** 2
+    B[3, :] = (3 * mDotR**2 + np.sum(m**2)) / R3**2
 
     # d|B|/dx, d|B|/dy, d|B|/dz
-    fR6 = 3 / R3 ** 2
-    u = np.sqrt(3 * mDotR ** 2 + np.sum(m ** 2))
+    fR6 = 3 / R3**2
+    u = np.sqrt(3 * mDotR**2 + np.sum(m**2))
     fac1 = R2 * mDotR / u
     fac2 = R * u
 
     gradB = np.zeros(shape=(3, len(mDotR)))
-    gradB[0:3, :] = fR6 * (fac1 * m * (1 - rnorm ** 2) - r0 * fac2)
+    gradB[0:3, :] = fR6 * (fac1 * m * (1 - rnorm**2) - r0 * fac2)
 
     return B, gradB
 
@@ -100,10 +98,10 @@ def mdiscMagneticField3D(r, MD, interpolator, compute_gradB=False):
     X, Y, Z = r
 
     # R modulus
-    R = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
+    R = np.sqrt(X**2 + Y**2 + Z**2)
 
     # Projection on (x,y) plane
-    Rcyl = np.sqrt(X ** 2 + Y ** 2)
+    Rcyl = np.sqrt(X**2 + Y**2)
 
     # colatitude in radians
     theta = np.pi / 2 - np.arctan2(Z, Rcyl)
@@ -111,16 +109,16 @@ def mdiscMagneticField3D(r, MD, interpolator, compute_gradB=False):
     # cos and sin of latitude
     coslat = Rcyl / R
     sinlat = Z / R
-    assert (
-        coslat ** 2 + sinlat ** 2 - 1 < 1e-6
-    ).all(), "Incorrect cos and sin of latitude. Sum of squares not equal to 1."
+    assert (coslat**2 + sinlat**2 - 1 < 1e-6).all(), (
+        "Incorrect cos and sin of latitude. Sum of squares not equal to 1."
+    )
 
     # cos and sin of longitude
     coslon = X / Rcyl
     sinlon = Y / Rcyl
-    assert (
-        coslon ** 2 + sinlon ** 2 - 1 < 1e-6
-    ).all(), "Incorrect cos and sin of longitude. Sum of squares not equal to 1."
+    assert (coslon**2 + sinlon**2 - 1 < 1e-6).all(), (
+        "Incorrect cos and sin of longitude. Sum of squares not equal to 1."
+    )
 
     # Calculate Br, Btheta, gradB based on the MD file
     Br, Bt, gradB = MDiscField(
@@ -128,7 +126,7 @@ def mdiscMagneticField3D(r, MD, interpolator, compute_gradB=False):
     )
 
     # |B|^2
-    B2 = Br ** 2 + Bt ** 2
+    B2 = Br**2 + Bt**2
 
     # Calculate corresponding Bx, By and Bz
     Bx = (Br * coslat + Bt * sinlat) * coslon
@@ -188,7 +186,7 @@ def MDiscField(r, theta, MD, interpolator, compute_gradB=False):
         dBdr = (interpolator["B"].ev(rp, mu) - interpolator["B"].ev(rm, mu)) / dr
 
         # tangential component
-        dmudt = -np.sqrt(1 - mu ** 2)
+        dmudt = -np.sqrt(1 - mu**2)
 
         # add EPS to deal with mu=0
         mup = mu * (1 + EPS) + EPS
@@ -213,12 +211,26 @@ def magneticFieldInterpolator(MD):
     Returns:
         interpolator (dict): Interpolators for Br, Bth, and B.
     """
-    MD_Br = MD["v2d"]["Br"] * MD["scales"]["bfield"]
-    MD_Bth = MD["v2d"]["Bth"] * MD["scales"]["bfield"]
-    MD_B = MD["v2d"]["B"] * MD["scales"]["bfield"]
+
+    opts = ("cubic", "cubic")
+
+    print(f"Generating field functions ({opts[0]},{opts[1]}) from ", end="")
+    print("magnetodisk field ... ", end="")
+
+    R = MD["c2d"]["r"][0, :]
+    Mu = MD["c2d"]["mu"][:, 0]
 
     interpolator = {key: None for key in ["Br", "Bth", "B"]}
-    interpolator["Br"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_Br.T)
-    interpolator["Bth"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_Bth.T)
-    interpolator["B"] = interp2(MD["c2d"]["r"][0, :], MD["c2d"]["mu"][:, 0], MD_B.T)
+
+    Br = MD["v2d"]["Br"] * MD["scales"]["bfield"]
+    interpolator["Br"] = interp2(R, Mu, Br.T, kx=3, ky=3)
+
+    Bth = MD["v2d"]["Bth"] * MD["scales"]["bfield"]
+    interpolator["Bth"] = interp2(R, Mu, Bth.T, kx=3, ky=3)
+
+    B = MD["v2d"]["B"] * MD["scales"]["bfield"]
+    interpolator["B"] = interp2(R, Mu, B.T, kx=3, ky=3)
+
+    print("done.")
+
     return interpolator
