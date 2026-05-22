@@ -21,7 +21,7 @@ function fit = fitTd(t,x,tb,a4td)
 %      nlm: class returned by fitnlm 
 
 %
-% $Id: fitTd.m,v 1.3 2019/06/14 14:09:32 patrick Exp $
+% $Id: fitTd.m,v 1.4 2026/05/22 14:24:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -131,7 +131,7 @@ dtb = 2*psd(2);
 td = a4td*p(4);
 dtd = a4td*psd(4);
 
-fprintf(1,'r2=%.2f tb=%6.2f s (%.2g) td=%6.2f s (%.2g)\n',...
+fprintf(1,'r2=%.2f tb=%6.2f s (±%.2g) td=%6.2f s (±%.2g)\n',...
         r2, tb, dtb, td,dtd);
 
 fit = struct('r2',r2,'tb',tb,'dtb',dtb,'td',td,'dtd',dtd,'f',f,'nlm',nlm);

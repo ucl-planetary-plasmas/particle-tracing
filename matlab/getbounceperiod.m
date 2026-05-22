@@ -15,7 +15,7 @@ function fit = getbounceperiod(t,x,omb)
 %        f    : time series of fitted latitudes
 
 %
-% $Id: getbounceperiod.m,v 1.7 2019/06/12 15:19:10 patrick Exp $
+% $Id: getbounceperiod.m,v 1.8 2026/05/22 14:24:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -64,7 +64,7 @@ tb = 2*pi/p(2);
 dtb = 2*pi*psd(2)/p(2)^2;
 mplat = max(abs(x));
 
-fprintf(1,'kvg=%d iter=%2d r2=%.2f tb=%6.2f s (%.2g) lm=%.2f deg A=%.2f deg (%.2g)\n',...
+fprintf(1,'kvg=%d iter=%2d r2=%.2f tb=%6.2f s (±%.2g) lm=%.2f deg A=%.2f deg (±%.2g)\n',...
         kvg, iter, r2,  tb, dtb, mplat, p(1), psd(1));
 
 fit = struct('kvg',kvg,'r2',r2,'tb',tb,'dtb',dtb,'mplat',mplat,'f',f);

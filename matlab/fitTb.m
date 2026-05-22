@@ -15,7 +15,7 @@ function fit = fitTb(t,x,tb)
 %        nlm  : class returned by fitnlm
 
 %
-% $Id: fitTb.m,v 1.2 2019/06/12 17:40:57 patrick Exp $
+% $Id: fitTb.m,v 1.3 2026/05/22 14:24:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -108,7 +108,7 @@ tb = p(2);
 dtb = psd(2);
 mplat = max(abs(x));
 
-fprintf(1,'r2=%.2f tb=%6.2f s (%.2g) lm=%.2f deg A=%.2f deg (%.2g)\n',...
+fprintf(1,'r2=%.2f tb=%6.2f s (±%.2g) lm=%.2f deg A=%.2f deg (±%.2g)\n',...
         r2,  tb, dtb, mplat, p(1), psd(1));
 
 fit = struct('r2',r2,'tb',tb,'dtb',dtb,'mplat',mplat,'f',f,'nlm',nlm);

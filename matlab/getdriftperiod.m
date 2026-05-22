@@ -20,7 +20,7 @@ function fit=getdriftperiod(t,x,omb,a4td)
 %      f  : time series of fitted longitudes
 
 %
-% $Id: getdriftperiod.m,v 1.7 2019/06/12 15:21:44 patrick Exp $
+% $Id: getdriftperiod.m,v 1.8 2026/05/22 14:24:53 patrick Exp $
 %
 % Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -51,7 +51,8 @@ end
 % initial parameters 
 % [modulation amplitude, modulation frequency, phase, drift frequency]
 % note that modulation frequency is equal to twice bounce period
-pin = [max(abs((x-polyval(pol,t))));2*omb;0;omd];
+pin = [mean(abs((x-polyval(pol,t))));2*omb;0;omd];
+%fprintf(1,'pin: %.10g %.10g %.10g %.10g\n',pin)
 
 % what to fit
 dp = [1; 1; 1; 1];
@@ -85,7 +86,7 @@ dtb = 2*(2*pi*psd(2)/p(2)^2);
 td = a4td/p(4);
 dtd = a4td*psd(4)/p(4)^2;
 
-fprintf(1,'kvg=%d iter=%2d r2=%.2f tb=%6.2f s (%.2g) td=%6.2f s (%.2g)\n',...
+fprintf(1,'kvg=%d iter=%2d r2=%.2f tb=%6.2f s (±%.2g) td=%6.2f s (±%.2g)\n',...
         kvg, iter, r2, tb, dtb, td,dtd);
 
 fit = struct('kvg',kvg,'r2',r2,'tb',tb,'dtb',dtb,'td',td,'dtd',dtd,'f',f);
