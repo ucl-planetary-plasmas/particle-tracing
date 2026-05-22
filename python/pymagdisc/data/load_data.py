@@ -1,5 +1,4 @@
 from scipy.io import loadmat
-import numpy as np
 
 
 def load_model(file: str, squeeze_me: bool = True):
@@ -13,13 +12,14 @@ def load_model(file: str, squeeze_me: bool = True):
     Sources: https://numpy.org/doc/stable/user/basics.rec.html
 
     """
-
+    print(f"Loading {file} ... ", end="")
     matdata = loadmat(
         file, squeeze_me=squeeze_me
     )  # raw data, squeeze_me removes length 1 dimensions
 
     MD = matdata["MD"]
     MD_dict = strucArr2dict(MD, keys=get_keys(MD))
+    print("done.")
 
     return MD_dict
 
