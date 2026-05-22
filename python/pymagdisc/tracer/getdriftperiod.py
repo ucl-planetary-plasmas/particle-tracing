@@ -1,6 +1,3 @@
-import os
-import sys
-import scipy as sp
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -19,30 +16,35 @@ def getdriftperiod(t, x, omb, a4td):
 
     # initial parameters
     # [modulation amplitude, modulation_period, phase, drift_frequency]
-    pin = [max(abs((x - np.polyval(pol, x)) / omd)), 2 * omb, 0, omd]
+    # pin = [max(abs((x - np.polyval(pol, x)) / omd)), 2 * omb, 0, omd]
+    pin = [np.mean(abs((x - np.polyval(pol, x)))), 2 * omb, 0, omd]
+    # print("pin: ",pin)
 
     # what to fit
-    dp = [1, 1, 1, 1]
+    # dp = [1, 1, 1, 1]
     # fixed omb
     # dp = [1, 0, 1, 1]
 
     # Parameters
-    stol = 1e-6
-    niter = 200
-    minstep = [0, 0, 0, 0]
-    maxstep = [np.inf, np.inf, np.inf, np.inf]
-    options = [minstep, maxstep]
+    # stol = 1e-6
+    # niter = 200
+    # minstep = [0, 0, 0, 0]
+    # maxstep = [np.inf, np.inf, np.inf, np.inf]
+    # options = [minstep, maxstep]
 
     # These are probably not needed
     # t = t(:);
     # x = x(:);
     wt = np.ones(t.shape)
 
-    F = lambda t, *p: p[3] * (t + p[0] * np.sin(p[1] * t + p[2]))
+    # F = lambda t, *p: p[3] * (t + p[0] * np.sin(p[1] * t + p[2]))
+    def F(t, *p):
+        return p[3] * (t + p[0] * np.sin(p[1] * t + p[2]))
+
     # dFdp = lambda t : [p[4]*np.sin(p[2]*t+p[3]),p[4]*p[0]*t*np.cos(p[1]*t+p[2]),p[3]*p[0]*np.cos(p[1]*t+p[2]),t+p[0]*np.sin(p[1]*t+p[2])]
 
     ##This has to be modified!!!!
-    p, covp = curve_fit(F, t, x, p0=pin)
+    p, covp = curve_fit(F, t, x, p0=pin, sigma=wt)
 
     # standard deviation for estimated parameters
     # psd = np.zeros(p.shape)
@@ -56,5 +58,5 @@ def getdriftperiod(t, x, omb, a4td):
     dtd = a4td * psd[3] / p[3] ** 2
     fitlon = F(t, *p)
 
-    print(f"Drift: td={td:.2f}+-{dtd:.2f}")
+    print(f"Drift: tb={tb:.2f} (±{dtb:.2f}) s; td={td:.2f} (±{dtd:.2f}) s")
     return td, dtd, fitlon
