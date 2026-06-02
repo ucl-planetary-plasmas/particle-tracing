@@ -21,6 +21,7 @@ setup(
         "matplotlib>=3.3",
         "tqdm>=4.66",
         "pytest>=9.0.3",
+        "pytest-cov>=7.1.0",
     ],
 
     entry_points={
