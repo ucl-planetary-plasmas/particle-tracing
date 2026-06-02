@@ -89,11 +89,37 @@ matlab -batch "example_trajectory"
 
 ## 🐍 Python Usage
 
+```bash id="py_cd
+cd python
+```
+
+### Create virtual environment
+
+```bash id="py_venv
+python3 -m venv .venv
+```
+
+### Activate virtual environment (sh/bash/zsh)
+
+```bash id="py_act_sh
+source .venv/bin/activate
+```
+
+### Activate virtual environment (csh/tcsh)
+
+```bash id="py_act_csh
+source .venv/bin/activate.csh
+```
+
+### Deactivate virtual environment
+
+```bash id="py_deact
+deactivate
+```
 
 ### Installation
 
 ```bash id="py_install"
-cd python
 pip install .
 ```
 
