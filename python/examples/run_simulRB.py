@@ -20,7 +20,7 @@ if __name__ == "__main__":
     MDfile = ["sat_mdisc_kh2e6_rmp25.mat","jup_mdisc_kh3e7_rmp60.mat","jup_mdisc_kh3e7_rmp90.mat"]
     # particle type (select: p, e, O+, O++, S+, S++, S+++)
     partype = "p"
-    # initial energy (in MeV)
+    # initial energy (in MeV) # 36 66 15
     E = np.logspace(-3,.5,36)
     # initial equatorial distance (in Jovian radii)
     R = np.linspace(5,70,66)
@@ -39,12 +39,12 @@ if __name__ == "__main__":
         directory = dossier + "/" + mdfile[:-4]
         if not os.path.exists(directory):
             os.makedirs(directory)
-        for Ep in E:
+        for ai in a:
             for Ri in R:
-                for ai in a:
+                for Ep in E:
                     # The code block below creates a text ("string" in python terminology), based on the parameters above
                     runname = (
-                        partype + "_Ri" + str(Ri) + "_Ep" + str(np.round(Ep,decimals=2)) + "_ai" + str(ai)
+                        partype + "_Ri" + str(int(Ri)) + "_Ep" + str(np.round(Ep,decimals=5)) + "_ai" + str(int(ai))
                     )
                 
                     # This creates the name of the file
