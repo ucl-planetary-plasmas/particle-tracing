@@ -51,7 +51,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.13 2026/05/22 14:26:45 patrick Exp $
+% $Id: mdbtracer.m,v 1.14 2026/06/11 16:01:46 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -422,31 +422,31 @@ end
 end
 
 % Compute b dot gradB and mu for Full Dynamic Boris
-[B,gradB] = mdiscMagneticField3D(Rm,{Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re});
-b = sqrt(B{4});
-BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./b;
+[Bb,gradBb] = mdiscMagneticField3D(Rm,{Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re});
+bb = sqrt(Bb{4});
+BgBb = (Bb{1}.*gradBb{1}+Bb{2}.*gradBb{2}+Bb{3}.*gradBb{3})./bb;
 %Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./b;
 V2b = Xb(:,4).^2+Xb(:,5).^2+Xb(:,6).^2;
-Vparb = (B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6))./b;
+Vparb = (Bb{1}.*Xb(:,4)+Bb{2}.*Xb(:,5)+Bb{3}.*Xb(:,6))./bb;
 %Vparb1 = (B{1}.*Vx+B{2}.*Vy+B{3}.*Vz)./b;
 %plot(tb,(Vparb-Vparb1)./Vparb), title('vpar'); pause
 Vperb = sqrt(V2b-Vparb.^2);
 %Vperb1 = sqrt(V2b-Vparb1.^2);
-Vper2b = V2-Vparb.^2;
+Vper2b = V2b-Vparb.^2;
 % Instantaneous first invariant Eq.14 
-muib = gamma^2*mp*Vper2b./(2*b);
+muib = gamma^2*mp*Vper2b./(2*bb);
 % pitch angle
 aib = atan2d(Vperb,Vparb);
 
-[B,gradB] = mdiscMagneticField3D(Rm,{Xf(:,1)/Re,Xf(:,2)/Re,Xf(:,3)/Re});
-b = sqrt(B{4});
-BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./b;
+[Bf,gradBf] = mdiscMagneticField3D(Rm,{Xf(:,1)/Re,Xf(:,2)/Re,Xf(:,3)/Re});
+bf = sqrt(Bf{4});
+BgBf = (Bf{1}.*gradBf{1}+Bf{2}.*gradBf{2}+Bf{3}.*gradBf{3})./bf;
 V2f = Xf(:,4).^2+Xf(:,5).^2+Xf(:,6).^2;
-Vparf = (B{1}.*Xf(:,4)+B{2}.*Xf(:,5)+B{3}.*Xf(:,6))./b;
+Vparf = (Bf{1}.*Xf(:,4)+Bf{2}.*Xf(:,5)+Bf{3}.*Xf(:,6))./bf;
 Vperf = sqrt(V2f-Vparf.^2);
 Vper2f = V2f-Vparf.^2;
 % Instantaneous first invariant Eq.14
-muif = gamma^2*mp*Vper2f./(2*b);
+muif = gamma^2*mp*Vper2f./(2*bf);
 % pitch angle 
 aif = atan2d(Vperf,Vparf);
 
@@ -629,6 +629,7 @@ if ~isempty(savefile), % save all trajectories
        'Omega','Omp','timespec','npertc',...
        'Tc','Tb','Td','Lm','rg',...
 			 'tb','Xb','Xf','Xgb','rgb','Xgf','rgf',...
+       'Bb','Bf','gradBb','gradBf','bb','bf','BgBb','BgBf',...
        'Zb','Rcylb','Rtotb','Eb','muib','aib','latb','lonb','Vparb','Vperb',...
        'Zf','Rcylf','Rtotf','Ef','muif','aif','latf','lonf','Vparf','Vperf',...
 			 'latfitb','latfitf','lonfitb','lonfitf');
