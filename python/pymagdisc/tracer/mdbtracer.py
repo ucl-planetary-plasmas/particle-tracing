@@ -318,39 +318,39 @@ class MDBTracer:
         )
 
         # Compute b dot gradB and mu for Full Dynamic Boris
-        B, gradB = mdiscMagneticField3D(
+        Bb, gradBb = mdiscMagneticField3D(
             [Xb[:, 0] / self.Re, Xb[:, 1] / self.Re, Xb[:, 2] / self.Re],
             MD=self.MD,
             interpolator=self.interpolator,
             compute_gradB=True,
         )
-        b = np.sqrt(B[3])
-        BgBb = (B[0] * gradB[0] + B[1] * gradB[1] + B[2] * gradB[2]) / b
+        bb = np.sqrt(Bb[3])
+        BgBb = (Bb[0] * gradBb[0] + Bb[1] * gradBb[1] + Bb[2] * gradBb[2]) / bb
         # Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./b;
         V2b = Xb[:, 3] ** 2 + Xb[:, 4] ** 2 + Xb[:, 5] ** 2
-        Vparb = (B[0] * Xb[:, 3] + B[1] * Xb[:, 4] + B[2] * Xb[:, 5]) / b
+        Vparb = (Bb[0] * Xb[:, 3] + Bb[1] * Xb[:, 4] + Bb[2] * Xb[:, 5]) / bb
         Vperb = np.sqrt(V2b - Vparb**2)
-        Vper2b = self.par.V2 - Vparb**2
+        Vper2b = V2b - Vparb**2
         # Instantaneous first invariant Eq.14
-        muib = (self.par.gamma**2) * self.par.mp * Vper2b / (2 * b)
+        muib = (self.par.gamma**2) * self.par.mp * Vper2b / (2 * bb)
         # pitch angle
         aib = 180 - np.rad2deg(np.arctan2(Vperb, Vparb))
 
-        B, gradB = mdiscMagneticField3D(
+        Bf, gradBf = mdiscMagneticField3D(
             [Xf[:, 0] / self.Re, Xf[:, 1] / self.Re, Xf[:, 2] / self.Re],
             MD=self.MD,
             interpolator=self.interpolator,
             compute_gradB=True,
         )
-        b = np.sqrt(B[3])
-        BgBb = (B[0] * gradB[0] + B[1] * gradB[1] + B[2] * gradB[2]) / b
+        bf = np.sqrt(Bf[3])
+        BgBf = (Bf[0] * gradBf[0] + Bf[1] * gradBf[1] + Bf[2] * gradBf[2]) / bf
         # Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./b;
         V2f = Xf[:, 3] ** 2 + Xf[:, 4] ** 2 + Xf[:, 5] ** 2
-        Vparf = (B[0] * Xf[:, 3] + B[1] * Xf[:, 4] + B[2] * Xf[:, 5]) / b
+        Vparf = (Bf[0] * Xf[:, 3] + Bf[1] * Xf[:, 4] + Bf[2] * Xf[:, 5]) / bf
         Vperf = np.sqrt(V2f - Vparf**2)
-        Vper2f = self.par.V2 - Vparf**2
+        Vper2f = V2f - Vparf**2
         # Instantaneous first invariant Eq.14
-        muif = (self.par.gamma**2) * self.par.mp * Vper2f / (2 * b)
+        muif = (self.par.gamma**2) * self.par.mp * Vper2f / (2 * bf)
         # pitch angle
         aif = 180 - np.rad2deg(np.arctan2(Vperf, Vparf))
 
@@ -436,8 +436,12 @@ class MDBTracer:
             "aib": aib,
             "latb": latb,
             "lonb": lonb,
+            "Bb": Bb,
+            "bb": bb,
+            "gradBb": gradBb,
             "Vparb": Vparb,
             "Vperb": Vperb,
+            "Vper2b": Vper2b,
             "Zf": Zf,
             "Rcylf": Rcylf,
             "Rtotf": Rtotf,
@@ -446,8 +450,12 @@ class MDBTracer:
             "aif": aif,
             "latf": latf,
             "lonf": lonf,
+            "Bf": Bf,
+            "bf": bf,
+            "gradBf": gradBf,
             "Vparf": Vparf,
             "Vperf": Vperf,
+            "Vper2f": Vper2f,
             "tbb": tbb,
             "dtbb": dtbb,
             "lmb": lmb,
