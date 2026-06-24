@@ -1,12 +1,17 @@
 function [B,varargout] = mdiscMagneticField3D(rm, r)
-% function [B,gradB] = mdiscMagneticField3D(rm, r)
+% function [B,gradB,curvB] = mdiscMagneticField3D(rm, r)
 %
 %    rm     : position of the magnetic moment
 %    r      : cartesion coordinates where to calculate magnetic field in RJ
 %    B      : magnetodisc magnetic field (cell array of length(m), each cell is
 %             an array of size(r))
+%             = = {Bx, By, Bz, Bm^2}
 %    gradB  : gradient of the magnetodisc magnetic field (cell array of
 %             length(m), each cell is an array of size(r))
+%             = {gradBx, gradBy, gradBz, gradBm, LB}
+%    curvB  : magnetic field curvature parameters (cell array of length(m),
+%             each cell is an array of size(r))
+%             = {Rc, Kx, Ky, Kz, Km}
 %
 %
 % Example to compare Jupiter's magnetodisc to a dipole
@@ -67,7 +72,7 @@ function [B,varargout] = mdiscMagneticField3D(rm, r)
 % xlabel('x'); ylabel('z'); legend({'B','\nabla B','Bd','\nabla Bd'});
 
 %
-% $Id: mdiscMagneticField3D.m,v 1.4 2017/10/18 07:50:02 patrick Exp $
+% $Id: mdiscMagneticField3D.m,v 1.5 2026/06/24 13:18:36 patrick Exp $
 %
 % Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
 %
@@ -119,8 +124,10 @@ sinlon = Y./Rcyl;
 
 if nargout<=1,
   [Br, Bt] = MDiscField(R,theta);
-else
+elseif nargout<=2
   [Br, Bt, gradB] = MDiscField(R,theta);
+else
+  [Br, Bt, gradB, curvB] = MDiscField(R,theta);
 end
 
 B2 =  Br.^2+Bt.^2;
@@ -133,13 +140,33 @@ B = {Bx,By,Bz,B2};
 
 if nargout>1,
 
-dBr = gradB{1};
-dBt = gradB{2};
+dBrdt = gradB{1};
+dBtdt = gradB{2};
 
-gradBx = (dBr.*coslat+dBt.*sinlat).*coslon;
-gradBy = (dBr.*coslat+dBt.*sinlat).*sinlon;
-gradBz = (dBr.*sinlat-dBt.*coslat);
+gradBx = (dBrdt.*coslat+dBtdt.*sinlat).*coslon;
+gradBy = (dBrdt.*coslat+dBtdt.*sinlat).*sinlon;
+gradBz = (dBrdt.*sinlat-dBtdt.*coslat);
 
-varargout{1} = {gradBx,gradBy,gradBz};
+gradBm = gradB{3};
+LB = gradB{4};
+
+varargout{1} = {gradBx,gradBy,gradBz,gradBm,LB};
+
+end
+
+if nargout>2,
+
+Rc = curvB{1};
+
+Kr = curvB{2};
+Kt = curvB{3};
+
+Kx = (Kr.*coslat+Kt.*sinlat).*coslon;
+Ky = (Kr.*coslat+Kt.*sinlat).*sinlon;
+Kz = (Kr.*sinlat-Kt.*coslat);
+
+Km = curvB{4};
+
+varargout{2} = {Rc, Kx, Ky, Kz, Km};
 
 end
