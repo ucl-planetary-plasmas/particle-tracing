@@ -6,27 +6,30 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % mdfile   : magnetodisc mat-file filename.
 % partype  : particle type 'p' -> proton, 'e' -> electron, 
 %            'O+', 'O++', 'S+', 'S++', 'S+++'.
-% Ep       : particle energy in MeV.
-% Ri       : initial particle equatorial position (in planet's radius Rp).
-% ai       : initial particle pitch angle (0..180 degrees).
-% timespec : defined as tmax = sum(timespec.*[1,tc,tb,td])
-%            where 1 is in units of seconds, tc in units of gyroperiod at Ri,
-%            tb in units of bounce period and td in units of drift period.
+% Ep       : particle energy [MeV].
+% Ri       : initial particle equatorial position in planet's radius [Rp].
+% ai       : initial particle pitch angle (0...180 deg).
+% timespec : max simulation time defined as sum(timespec.*[1,tc,tb,td]) where
+%              * 1 is in units of seconds, 
+%              * tc in units of gyroperiod at initial Ri,
+%              * tb in units of dipole bounce period,
+%              * td in units of dipole drift period.
 % savefile : filename to save the simulation data,
-%            if not given, do not save simulation data.
+%            if not given or empty, do not save simulation data.
 % pauseOn  : flag to pause on/ pause off.
-%            if not given, pause on.
+%            if not given or empty, pause on.
 % plotOn   : flag to plot on/ plot off.
-%            if not given, plot on.
-% npertc   : optional number of Boris iterations per gyroperiod (default 5)
+%            if not given or empty, plot on.
+% npertc   : optional number of Boris iterations per gyroperiod at Ri,
+%            default value 5.
 %
 % For instance 
 %
 %   mdfile = 'jup_mdisc_kh3e7_rmp90'; % magnetodisc mat-file
 %   partype = 'p';                    % proton
-%   Ep = 100;                         % energy 100 MeV
-%   Ri = 4;                           % initial equatorial distance 4*Rp
-%   ai = 30;                          % initial pitch angle 30 degrees
+%   Ep = 100;                         % energy [MeV]
+%   Ri = 4;                           % initial equatorial distance [Rp]
+%   ai = 30;                          % initial equatorial pitch angle [deg]
 %   timespec = [0,0,2,0];             % run for 2 dipole bounce periods
 %   savefile = 'my_jup_mdisc_sim';    % name for result mat-file
 %
@@ -41,9 +44,9 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 %
 %   mdfile = 'sat_mdisc_kh2e6_rmp25'; % magnetodisc mat-file
 %   partype = 'p';                    % proton
-%   Ep = 100;                         % energy 100 MeV
-%   Ri = 4;                           % initial equatorial distance 4*Rp
-%   ai = 30;                          % initial pitch angle 30 degrees
+%   Ep = 100;                         % energy [MeV]
+%   Ri = 4;                           % initial equatorial distance [Rp]
+%   ai = 30;                          % initial equatorial pitch angle [deg]
 %   timespec = [0,0,2,0];             % run for 2 dipole bounce periods
 %
 %   mdbtracer(mdfile,partype,Ep,Ri,ai,timespec);
@@ -51,7 +54,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.14 2026/06/11 16:01:46 patrick Exp $
+% $Id: mdbtracer.m,v 1.15 2026/06/24 21:40:11 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -69,19 +72,19 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % You should have received a copy of the GNU General Public License
 % along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if ~exist('savefile','var'), % define savefile if necessary
+if ~exist('savefile','var'), % define savefile if not given
   savefile = [];
 end
 
-if ~exist('pauseOn','var') | isempty(pauseOn), % define pauseOn to true by default
+if ~exist('pauseOn','var') | isempty(pauseOn), % define pauseOn default
   pauseOn = true;
 end
 
-if ~exist('plotOn','var') | isempty(plotOn), % define plotOn to true by default
+if ~exist('plotOn','var') | isempty(plotOn), % define plotOn default
   plotOn = true;
 end
 
-if ~exist('npertc','var') | isempty(npertc), % define npertc=5 by default
+if ~exist('npertc','var') | isempty(npertc), % define npertc=5 default
   npertc = 5;
 end
 
@@ -96,6 +99,11 @@ MDFile = mdfile;
 % clear function with persistent variables
 clear MDiscField
 load(MDFile,'MD')
+
+Rmp = max(MD.dims.r);
+if Ri>=Rmp,
+  error(['Ri=' num2str(Ri) ' is larger than Rmp=' num2str(Rmp)]);
+end
 
 % Planet's equatorial radius in m
 Re = MD.planet.r0;
@@ -166,6 +174,7 @@ end
 
 EMeV = Ep*1e6*eV;      % particle energy in MeV
 Vpc = sqrt(2/mp*EMeV);  % classic velocity 
+fprintf('particle: %s (m=%.6g amu, Z=%d)\n',parname,mp/amu,qp/e) 
 fprintf('classic v=%.4g m/s E=%.4g MeV\n',Vpc,.5*mp*Vpc^2/(1e6*eV))
 Vpr = c*sqrt(EMeV*(EMeV+2*mp*c^2))/(EMeV+mp*c^2); % relativistic velocity
 fprintf('relativ v=%.4g m/s E=%.4g MeV\n',Vpr,(1/sqrt(1-Vpr^2/c^2)-1)*mp*c^2/(1e6*eV));
@@ -192,25 +201,25 @@ trace(X,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,plotOn,npertc);
 function [Xo,mu,tc,tb,td,lm,rg]=init(R,v,alpha)
 
 % initial condition x0,y0,z0,vx0,vy0,vz0
-Xo = [R;            0;            0;...
-      0;v*sind(alpha);v*cosd(alpha)];
+Xo = [R,            0,            0,...
+      0,v*sind(alpha),v*cosd(alpha)];
 
 % magnetic field at initial position
 B = mdiscMagneticField3D(Rm,{Xo(1)/Re,Xo(2)/Re,Xo(3)/Re});
-b = sqrt(B{4});
+Bm = sqrt(B{4});
 
-fprintf(1,'Ri=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
+fprintf(1,'Ri=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*Bm)
 
-% v parallel and perpendicular
-vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
+% v parallel and perpendicular amplitudes
+vpar = dot(Xo(1,4:6),[B{1};B{2};B{3}])/Bm;
 vper = sqrt(V2-vpar^2);
 
 % gyro radius at equator
-rg = abs(gamma/qOverM*vper/b);
+rg = abs(gamma/qOverM*vper/Bm);
 fprintf(1,'rg=%.4gRe\n', rg/Re);
 
 % first invariant mu
-mu = gamma^2*mp*vper^2/(2*b);
+mu = gamma^2*mp*vper^2/(2*Bm);
 
 [tc,tb,td] = periods(R,alpha);
 
@@ -231,9 +240,9 @@ end
 function trace(Xo,mdfile,Ep,Ri,ai,timespec,Tc,Tb,Td,Lm,rg,savefile,pauseOn,plotOn,npertc)
 
 % Planet's surface
-ts = linspace(0,2*pi,100);
-Xp = cos(ts);
-Yp = sin(ts);
+tp = linspace(0,2*pi,100);
+Xp = cos(tp);
+Yp = sin(tp);
 
 % *dipole* mirror point 
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
@@ -253,8 +262,8 @@ tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
 % number of iteration such that dt \sim max([tm/3,Tc/5])
 nsteps = ceil(diff(tspan)/(Tc/npertc));
 fprintf(1,'%.10g %.10g %.10g %.10g\n',tspan(1),tspan(end),Tc,nsteps)
-tb = linspace(tspan(1),tspan(end),nsteps)';
-dt = diff(tb(1:2));
+ts = linspace(tspan(1),tspan(end),nsteps)';
+dt = diff(ts(1:2));
 % tc/tm ratio of gyro period at equator and dipole mirror point 
 fprintf(1,'tm=%.6g, tm/dt=%.6f tc/tm=%.6f, tc/dt=%.6f\n',...
         [tm,tm/dt,Tc/tm,Tc/dt]);
@@ -263,103 +272,52 @@ if exist('is_octave')==2 && is_octave(),
   fflush(1);
 end
 
-tic
-Xb = zeros(length(tb),length(Xo));
-Xf = zeros(length(tb),length(Xo));
-Xgb = zeros(length(tb),3);
-Xgf = zeros(length(tb),3);
-rgb = zeros(length(tb),3);
-rgf = zeros(length(tb),3);
-if exist('gpuArray','builtin'),
-  Xb = gpuArray(Xb);
-  Xf = gpuArray(Xf);
-  Xgb = gpuArray(Xgb);
-  Xgf = gpuArray(Xgf);
-	rgb = gpuArray(rgb);
-	rgf = gpuArray(rgf);
-end
+s1.on = true; 
+s1.name = 'Boris';
+s1 = initVar(s1,ts,dt);
 
-Xb(1,:) = BorisInit(Xo,dt);
-Xf(1,:) = Xb(1,:);
+s2.on = true;
+s2.name = 'BorisCF';
+s2 = initVar(s2,ts,dt);
 
-%rgb(1,:) = [rg,0,0];
-%Xgb(1,:) =  Xb(1,1:3)-rgb(1,:);
-%rgb(1,:)/Re,Xgb(1,:)/Re
+s1.X(1,:) = BorisInit(Xo,dt);
+%s1.rg(1,:) = [rg,0,0];
+%s1.Xg(1,:) =  s1.X(1,1:3)-s1.rg(1,:);
+%s1.rg(1,:)/Re,s1.Xg(1,:)/Re
 
-[Xgb(1,:),rgb(1,:)] = getGyroRadius(Xb(1,1:3),.5*(Xb(1,4:6)+Xb(1,4:6)));
-rgb(1,2:3) = 0; % initially along x-axis
-%rgb(1,:)/Re,Xgb(1,:)/Re
+Rp = s1.X(1,1:3); Vp = .5*(s1.X(1,4:6)+s1.X(1,4:6));
+[s1.Xg(1,:),s1.rg(1,:)] = getGyroRadius(Rp,Vp);
+s1.rg(1,2:3) = 0; % force initially along x-axis
+%s1.rg(1,:)/Re,s1.Xg(1,:)/Re
 
-rgf(1,:) = rgb(1,:);
-Xgf(1,:) = Xgb(1,:);
+s1 = runSimul(s1);
 
-backspaces = '';
-niter = length(tb)-1;
-frq = fix(niter/20); % 20 -> every 5% (100/20)
-tic
-for i=1:niter,
-  Xb(i+1,:) = BorisIter(Xb(i,:),dt);
-  [Xgb(i+1,:),rgb(i+1,:)] = getGyroRadius(Xb(i,1:3),.5*(Xb(i,4:6)+Xb(i+1,4:6)));
-	if mod(i,frq)==0,
-	  progStr = sprintf('Progress: %d/%d [%3d%%%%]',i,niter,round(i/niter*100));
-		fprintf([backspaces,progStr]);
-		backspaces = repmat('\b',1,length(progStr));
-	end
-end
-elapsed = toc;
-progStr = sprintf('Progress: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
-                  i,niter,round(i/niter*100), elapsed,niter/elapsed);
-fprintf([backspaces,progStr]);
+% Same init for s2
+s2.X(1,:) = s1.X(1,:);
+s2.rg(1,:) = s1.rg(1,:);
+s2.Xg(1,:) = s1.Xg(1,:);
 
-tic
-for i=1:niter,
-  Xf(i+1,:) = FullBorisIter(Xf(i,:),dt);
-  [Xgf(i+1,:),rgf(i+1,:)] = getGyroRadius(Xf(i,1:3),.5*(Xf(i,4:6)+Xf(i+1,4:6)));
-  if mod(i,frq)==0,
-    progStr = sprintf('Progress: %d/%d [%3d%%%%]',i,niter,round(i/niter*100));
-    fprintf([backspaces,progStr]);
-    backspaces = repmat('\b',1,length(progStr));
-  end
-end
-elapsed = toc;
-progStr = sprintf('Progress: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
-                  i,niter,round(i/niter*100), elapsed,niter/elapsed);
-fprintf([backspaces,progStr]);
+s2 = runSimulCF(s2);
 
-%Xgb(1:5,:)/Re,rgb(1:5,:)/Re
-%Xgf(1:5,:)/Re,rgf(1:5,:)/Re
+%s1.Xg(1:5,:)/Re,s1.rg(1:5,:)/Re
+%s2.Xg(1:5,:)/Re,s2.rg(1:5,:)/Re
 
+s1 = computeDiagnostics(s1);
 
-Zb    = Xb(:,3);
-Rcylb = sqrt(Xb(:,1).^2+Xb(:,2).^2);
-Rtotb = sqrt(Xb(:,1).^2+Xb(:,2).^2+Xb(:,3).^2);
-Zf    = Xf(:,3);
-Rcylf = sqrt(Xf(:,1).^2+Xf(:,2).^2);
-Rtotf = sqrt(Xf(:,1).^2+Xf(:,2).^2+Xf(:,3).^2);
-
-Zgb = Xgb(:,3);
-Rgcylb = sqrt(Xgb(:,1).^2+Xgb(:,2).^2);
-Rgtotb = sqrt(Xgb(:,1).^2+Xgb(:,2).^2+Xgb(:,3).^2);
-Zgf = Xgf(:,3);
-Rgcylf = sqrt(Xgf(:,1).^2+Xgf(:,2).^2);
-Rgtotf = sqrt(Xgf(:,1).^2+Xgf(:,2).^2+Xgf(:,3).^2);
-
-%Vx = 0.5*[Xb(1:end-1,4)+Xb(2:end,4);Xb(end,4)+Xend(4)];
-%Vy = 0.5*[Xb(1:end-1,5)+Xb(2:end,5);Xb(end,5)+Xend(5)];
-%Vz = 0.5*[Xb(1:end-1,6)+Xb(2:end,6);Xb(end,6)+Xend(6)];
+s2 = computeDiagnostics(s2);
 
 if plotOn,
 figure
 subplot(211)
-plot(Rcylb/Re,Zb/Re,Rcylf/Re,Zf/Re,Xp,Yp),
+plot(s1.Rcyl/Re,s1.Z/Re,s2.Rcyl/Re,s2.Z/Re,Xp,Yp),
 axis equal,
 xlabel('\rho'), ylabel('z')
-legend({'B','F'},'Location','Best')
+legend({'Boris','BorisCF'},'Location','Best')
 subplot(212)
-plot(Rgcylb/Re,Zgb/Re,Rgcylf/Re,Zgf/Re,Xp,Yp),
+plot(s1.Rgcyl/Re,s1.Zg/Re,s2.Rgcyl/Re,s2.Zg/Re,Xp,Yp),
 axis equal,
 xlabel('\rho'), ylabel('z')
-legend({'XB','XF'},'Location','Best')
+legend({'Boris-GC','BorisCF-GC'},'Location','Best')
 if pauseOn,
   fprintf(1,'Ok, press return\n'),
   pause
@@ -369,49 +327,22 @@ else
 end
 end
 
+% Kinetic energy in eV for CF Dynamic Boris
+%save('v2b_mat','s1.v2','s1.v2c')
+%plot(s1.t,sqrt(s1.v2),s2.t,sqrt(s2.v2)); title('|v|^2'), pause
 
-% Kinetic energy in eV for Full Dynamic Boris
-v2b = sum(Xb(:,[4:6])'.^2)';
-%v2bc = v2b-mean(v2b);
-%fprintf(1,'v2b %10g %10g\n',mean(v2b), var(v2b))
-%fprintf(1,'v2bc %10g %10g\n',mean(v2bc), var(v2bc))
-%save('v2b_mat','v2b','v2bc')
-v2f = sum(Xf(:,[4:6])'.^2)';
-%v2b1 = Vx.^2+Vy.^2+Vz.^2;
-%size(v2b),size(v2b1)
-%plot(tb,sqrt(v2b),tb,sqrt(v2b1)); title('|v|^2'), pause
-%plot(tb,sqrt(v2b),tb,sqrt(v2f)); title('|v|^2'), pause
-%Eb = 1/2*mp*v2b/eV;  % classic
-Eb = (1./sqrt(1-v2b/c^2)-1)*mp*c^2/eV; % relativistic
-Ef1 = (1./sqrt(1-v2f/c^2)-1)*mp*c^2/eV;
-% Only valid for Omega along z-axis
-%Ef2 = -.5*mp*Omega^2*Rcylf.^2/eV; % relativistic
-Ef2 = -.5*mp*((Omp(:)'*Omp(:))*Rtotf.^2-...
-              (Omp(:)'*Xf(:,1:3)')'.^2)/eV; % relativistic
-% Adjust potential energy of rotation so that minimum is zero
-Ef2 = Ef2-min(Ef2(:));
-Ef = Ef1+Ef2;
-% mean and variance
-meanEb = mean(Eb);
-stdEb = std(Eb);
-fprintf(1,'<Eb> = %10g MeV, std(E) = %10g eV std(E)/<Eb> = %10g\n',...
-        meanEb/1e6, stdEb, stdEb/meanEb);
-meanEf = mean(Ef);
-stdEf = std(Ef);
-fprintf(1,'<Ef> = %10g MeV, std(E) = %10g eV std(E)/<Ef> = %10g\n',...
-        meanEf/1e6, stdEf, stdEf/meanEf);
 if plotOn,
 subplot(311)
-plot(tb,Eb,tb,Ef,tb,Ef1); 
+plot(s1.t,s1.E,s2.t,s2.E,s2.t,s2.Ek); 
 title('Energy'); 
-legend({'B','F','KF'},'Location','Best')
+legend({'Boris','BorisCF','BorisCF-Ek'},'Location','Best')
 subplot(312)
-plot(tb,Ef2),
-legend({'PF'},'Location','Best')
+plot(s2.t,s2.Ep),
+legend({'BorisCF-Ep'},'Location','Best')
 subplot(313)
-plot(tb,(Eb-meanEb)/meanEb,tb,(Ef-meanEf)/meanEf);
+plot(s1.t,(s1.E-s1.meanE)/s1.meanE,s2.t,(s2.E-s2.meanE)/s2.meanE);
 xlabel('time'), ylabel('(E-<E>)/<E>')
-legend({'B','F'},'Location','Best')
+legend({'Boris','BorisCF'},'Location','Best')
 if pauseOn,
   fprintf(1,'Ok, press return\n'),
   pause
@@ -420,71 +351,36 @@ else
   drawnow
 end
 end
-
-% Compute b dot gradB and mu for Full Dynamic Boris
-[Bb,gradBb] = mdiscMagneticField3D(Rm,{Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re});
-bb = sqrt(Bb{4});
-BgBb = (Bb{1}.*gradBb{1}+Bb{2}.*gradBb{2}+Bb{3}.*gradBb{3})./bb;
-%Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./b;
-V2b = Xb(:,4).^2+Xb(:,5).^2+Xb(:,6).^2;
-Vparb = (Bb{1}.*Xb(:,4)+Bb{2}.*Xb(:,5)+Bb{3}.*Xb(:,6))./bb;
-%Vparb1 = (B{1}.*Vx+B{2}.*Vy+B{3}.*Vz)./b;
-%plot(tb,(Vparb-Vparb1)./Vparb), title('vpar'); pause
-Vperb = sqrt(V2b-Vparb.^2);
-%Vperb1 = sqrt(V2b-Vparb1.^2);
-Vper2b = V2b-Vparb.^2;
-% Instantaneous first invariant Eq.14 
-muib = gamma^2*mp*Vper2b./(2*bb);
-% pitch angle
-aib = atan2d(Vperb,Vparb);
-
-[Bf,gradBf] = mdiscMagneticField3D(Rm,{Xf(:,1)/Re,Xf(:,2)/Re,Xf(:,3)/Re});
-bf = sqrt(Bf{4});
-BgBf = (Bf{1}.*gradBf{1}+Bf{2}.*gradBf{2}+Bf{3}.*gradBf{3})./bf;
-V2f = Xf(:,4).^2+Xf(:,5).^2+Xf(:,6).^2;
-Vparf = (Bf{1}.*Xf(:,4)+Bf{2}.*Xf(:,5)+Bf{3}.*Xf(:,6))./bf;
-Vperf = sqrt(V2f-Vparf.^2);
-Vper2f = V2f-Vparf.^2;
-% Instantaneous first invariant Eq.14
-muif = gamma^2*mp*Vper2f./(2*bf);
-% pitch angle 
-aif = atan2d(Vperf,Vparf);
-
-% Compute latitude and longitude
-latb = atan2d(Zb,Rcylb);        % atan(Rcyl/Z)
-lonb = 180/pi*unwrap(atan2(Xb(:,2),Xb(:,1))); % atan(X/Y);
-latf = atan2d(Zf,Rcylf);        % atan(Rcyl/Z)
-lonf = 180/pi*unwrap(atan2(Xf(:,2),Xf(:,1))); % atan(X/Y);
 
 if plotOn,
 subplot(311), 
-plot(tb,muib,tb,muif,tb,facdv*gamma^2*mp*ones(size(tb))),
+plot(s1.t,s1.mui,s2.t,s2.mui,ts,facdv*gamma^2*mp*ones(size(ts))),
 xlabel('time')
 ylabel('\mu 1st invariant')
-legend({'B','F','Initial'},'Location','Best')
+legend({'Boris','BorisCF','Initial'},'Location','Best')
 
 subplot(312),
-plot(tb,aib,tb,aif),
+plot(s1.t,s2.ai,s2.t,s2.ai),
 xlabel('time')
 set(gca,'ylim',[0,180],'ytick',[0,90,180])
 ylabel('\alpha pitch angle')
-legend({'B','F'},'Location','Best')
+legend({'Boris','BorisCF'},'Location','Best')
 
 subplot(313), 
-%plot(tb,latb), xlabel('time'); ylabel('Latitude')
 aip = abs(ai);
 xd=[0;sind(aip);0;sind(aip)]; 
 yd=[0;cosd(aip);0;-cosd(aip)];
-[~,im]=min(Vperb);
-xb=[0;Vperb(im);0;Vperb(im)]/sqrt(V2b(im)); 
-yb=[0;Vparb(im);0;-Vparb(im)]/sqrt(V2b(im));
-[~,im]=min(Vperf);
-xf=[0;Vperf(im);0;Vperf(im)]/sqrt(V2f(im)); 
-yf=[0;Vparf(im);0;-Vparf(im)]/sqrt(V2f(im));
-plot(Vperb./sqrt(V2b),Vparb./sqrt(V2b),Vperf./sqrt(V2f),Vparf./sqrt(V2f),...
-     xb,yb,xf,yf,xd,yd),
+[~,im]=min(s1.Vper);
+x1=[0;s1.Vper(im);0;s1.Vper(im)]/sqrt(s1.V2(im)); 
+y1=[0;s1.Vpar(im);0;-s1.Vpar(im)]/sqrt(s1.V2(im));
+[~,im]=min(s2.Vper);
+x2=[0;s2.Vper(im);0;s2.Vper(im)]/sqrt(s2.V2(im)); 
+y2=[0;s2.Vpar(im);0;-s2.Vpar(im)]/sqrt(s2.V2(im));
+plot(s1.Vper./sqrt(s1.V2),s1.Vpar./sqrt(s1.V2),...
+     s2.Vper./sqrt(s2.V2),s2.Vpar./sqrt(s2.V2),...
+     x1,y2,x2,y2,xd,yd),
 xlabel('v_\perp'); ylabel('v_{||}'); 
-legend({'B','F','BMP','FMP','DMP'},'Location','Best')
+legend({'Boris','BorisCF','BMP','FMP','DMP'},'Location','Best')
 if pauseOn,
   fprintf(1,'Ok, press return\n'), 
   pause
@@ -495,30 +391,30 @@ end
 end
 
 % L-Shell with L
-t = linspace(-pi/2,pi/2,100);
-% estimate L from instantaneous L
-%coslat = Rcyl./R; Ls = R./coslat.^2/Re;
-Lsb = Rtotb.^3./Rcylb.^2/Re;
-Le = mean(Lsb);
-fprintf(1,'L estimated = %.2f\n', Le);
+tl = linspace(-pi/2,pi/2,100);
 if 0,
 	f=figure; 
-	plot(tb,Lsb), 
+	plot(s1.t,s1.L,s2.t,s2.L), 
 	pause, close(f);
 end
-r = Le *cos(t).^2;
-ir = find(r>=1);
-xe = r(ir).*cos(t(ir));
-ye = r(ir).*sin(t(ir));
+r1 = s1.meanL *cos(tl).^2;
+ir = find(r1>=1);
+x1 = r1(ir).*cos(tl(ir));
+y1 = r1(ir).*sin(tl(ir));
+
+r2 = s2.meanL *cos(tl).^2;
+ir = find(r2>=1);
+x2 = r2(ir).*cos(tl(ir));
+y2 = r2(ir).*sin(tl(ir));
 
 if plotOn,
 % plot trajectory Rcyl vs Z
 subplot(211), 
-plot(Rcylb/Re,Zb/Re,Rcylf/Re,Zf/Re,xe,ye,'-.',Xp,Yp), 
+plot(s1.Rcyl/Re,s1.Z/Re,s2.Rcyl/Re,s2.Z/Re,x1,y1,'-.',x2,y2,'-.',Xp,Yp), 
 xlabel('\rho'),
 ylabel('z'),
-title(sprintf('X_0=%.2f L=%.2f', Xo(1)/Re, Le))
-legend({'B','F','L-shell'},'Location','Best');
+title(sprintf('X_0=%.2f L=%.2f', Xo(1)/Re, s1.meanL))
+legend({'Boris','BorisCF','L-shell'},'Location','Best');
 %set(gca,'xlim',[0 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal,
@@ -526,19 +422,19 @@ axis equal,
 subplot(212),
 if 1,
 % plot trajectory X vs Y
-plot(Xb(:,1)/Re,Xb(:,2)/Re,Xf(:,1)/Re,Xf(:,2)/Re,...
-     Xgb(:,1)/Re,Xgb(:,2)/Re,Xgf(:,1)/Re,Xgf(:,2)/Re,Xp,Yp), 
+plot(s1.X(:,1)/Re,s1.X(:,2)/Re,s2.X(:,1)/Re,s2.X(:,2)/Re,...
+     s1.Xg(:,1)/Re,s1.Xg(:,2)/Re,s2.Xg(:,1)/Re,s2.Xg(:,2)/Re,Xp,Yp), 
 xlabel('x'),
 ylabel('y'),
-legend({'B','F','BC','FC'},'Location','Best');
+legend({'Boris','BorisCF','Boris-GC','BorisCF-GC'},'Location','Best');
 else
 % 3d plot trajectory
-plot3(Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re), 
+plot3(s1.X(:,1)/Re,s1.X(:,2)/Re,s1.X(:,3)/Re), 
 xlabel('x'),
 ylabel('y'),
 zlabel('z'),
 end
-title(sprintf('<E>=%2g MeV std(E)=%2g eV',meanEb/1e6,stdEb));
+title(sprintf('<E>=%2g MeV std(E)=%2g eV',s1.meanE/1e6,s1.stdE));
 %set(gca,'xlim',[-4.5 4.5])
 %set(gca,'ylim',[-4.5 4.5])
 axis equal
@@ -551,71 +447,16 @@ else
 end
 end
 
-% bounce period fit
-
-fprintf(1,'**** Bounce period Boris\n');
-% identify zero crossings
-izc = find(latb(1:end-1).*latb(2:end)<0);
-% average time between zero-crossings times 2 = exact period
-Tbe = 2*mean(diff(tb(izc)));
-% initial period value for fit
-% average of dipole Tb and Tbe with weight 1 and 2
-Tbi= (Tb+2*Tbe)/3;
-% exact period
-Tbi= Tbe;
-if isfinite(Tbe),
-fprintf(1,'Init Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,Tbe,Tbi);
-latfitb = getbounceperiod(tb,latb,2*pi/Tbi);
-latfitb1 = fitTb(tb,latb,Tbi);
-else
-latfitb = [];
-latfitb1 = [];
-end
-
-fprintf(1,'**** Bounce period FullBoris\n');
-% identify zero crossings
-izc = find(latf(1:end-1).*latf(2:end)<0);
-Tbe = 2*mean(diff(tb(izc)));
-% Taking average of Tb and Tbe with weight 1 and 2
-Tbi= (Tb+2*Tbe)/3;
-Tbi= Tbe;
-if isfinite(Tbe),
-fprintf(1,'Init Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,Tbe,Tbi);
-latfitf = getbounceperiod(tb,latf,2*pi/Tbi);
-latfitf1 = fitTb(tb,latf,Tbi);
-else
-latfitf = [];
-latfitf1 = [];
-end
-
-% drift period fit
-if ~isempty(latfitb),
-fprintf(1,'**** Drift period Boris\n');
-lonfitb = getdriftperiod(tb,lonb,2*pi/latfitb.tb,360);
-lonfitb1 = fitTd(tb,lonb,latfitb.tb,360);
-else
-lonfitb = [];
-lonfitb1 = [];
-end
-if ~isempty(latfitf),
-fprintf(1,'**** Drift period FullBoris\n');
-lonfitf = getdriftperiod(tb,lonf,2*pi/latfitf.tb,360);
-lonfitf1 = fitTd(tb,lonf,latfitf.tb,360);
-else
-lonfitf = [];
-lonfitf1 = [];
-end
-
-if ~isempty(latfitb) && ~isempty(latfitf) && plotOn,
+if ~isempty(s1.latfit) && ~isempty(s2.latfit) && plotOn,
 subplot(211),
-plot(tb,latb,tb,latfitb.f,tb,latf,tb,latfitf.f),
+plot(s1.t,s1.lat,s1.t,s1.latfit.f,s2.t,s2.lat,s2.t,s2.latfit.f),
 xlabel('time'); ylabel('Latitude')
-legend({'B','FIT','F','FIT'})
+legend({'Boris','Boris-FIT','BorisCF','BorisCF-FIT'})
 
 subplot(212),
-plot(tb,lonb,tb,lonfitb.f,tb,lonf,tb,lonfitf.f), 
+plot(s1.t,s1.lon,s1.t,s1.lonfit.f,s2.t,s2.lon,s2.t,s2.lonfit.f), 
 xlabel('time'); ylabel('Longitude')
-legend({'B','FIT','F','FIT'})
+legend({'Boris','Boris-FIT','BorisCFF','BorisCF-FIT'})
 
 drawnow
 end
@@ -627,39 +468,204 @@ if ~isempty(savefile), % save all trajectories
   save(savefile,'mdfile','Re','Be','partype','parname','Ep','Ri','ai',...
        'gamma','qOverM','Vpc','Vpr',...
        'Omega','Omp','timespec','npertc',...
-       'Tc','Tb','Td','Lm','rg',...
-			 'tb','Xb','Xf','Xgb','rgb','Xgf','rgf',...
-       'Bb','Bf','gradBb','gradBf','bb','bf','BgBb','BgBf',...
-       'Zb','Rcylb','Rtotb','Eb','muib','aib','latb','lonb','Vparb','Vperb',...
-       'Zf','Rcylf','Rtotf','Ef','muif','aif','latf','lonf','Vparf','Vperf',...
-			 'latfitb','latfitf','lonfitb','lonfitf');
+       'Tc','Tb','Td','Lm','rg','ts','s1','s2');
 end
 
 end
 
-function rn = FullBorisIter(r,h)
+function s = runSimulCF(s)
 
-%rn = zeros(size(r));
-%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
-x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
+backspaces = '';
+niter = length(s.t)-1;
+frq = fix(niter/20); % 20 -> every 5% (100/20)
+
+tic
+for i=1:niter,
+  s.X(i+1,:) = BorisIterCF(s.X(i,:), s.dt);
+	Rp = s.X(i,1:3); Vp = .5*(s.X(i,4:6)+s.X(i+1,4:6));
+  [s.Xg(i+1,:),s.rg(i+1,:)] = getGyroRadius(Rp,Vp);
+	if mod(i,frq)==0,
+	  progStr = sprintf('Progress %s: %d/%d [%3d%%%%]',...
+		                  s.name,i,niter,round(i/niter*100));
+		fprintf([backspaces,progStr]);
+		backspaces = repmat('\b',1,length(progStr));
+	end
+end
+elapsed = toc;
+progStr = sprintf('Progress %s: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
+                  s.name,i,niter,round(i/niter*100), elapsed,niter/elapsed);
+fprintf([backspaces,progStr]);
+
+end 
+
+function s = runSimul(s)
+
+backspaces = '';
+niter = length(s.t)-1;
+frq = fix(niter/20); % 20 -> every 5% (100/20)
+
+tic
+for i=1:niter,
+  s.X(i+1,:) = BorisIter(s.X(i,:), s.dt);
+	Rp = s.X(i,1:3); Vp = .5*(s.X(i,4:6)+s.X(i+1,4:6));
+  [s.Xg(i+1,:),s.rg(i+1,:)] = getGyroRadius(Rp,Vp);
+	if mod(i,frq)==0,
+	  progStr = sprintf('Progress %s: %d/%d [%3d%%%%]',...
+		                  s.name,i,niter,round(i/niter*100));
+		fprintf([backspaces,progStr]);
+		backspaces = repmat('\b',1,length(progStr));
+	end
+end
+elapsed = toc;
+progStr = sprintf('Progress %s: %d/%d [%3d%%%%] (%.4g s, %.2f it/s)\n',...
+                  s.name,i,niter,round(i/niter*100), elapsed,niter/elapsed);
+fprintf([backspaces,progStr]);
+
+end
+
+function s = computeDiagnostics(s)
+
+s.Z    = s.X(:,3);
+s.Rcyl = sqrt(sum(s.X(:,1:2).^2,2));
+s.Rtot = sqrt(sum(s.X(:,1:3).^2,2));
+
+s.Zg = s.Xg(:,3);
+s.Rgcyl = sqrt(sum(s.Xg(:,1:2).^2,2));
+s.Rgtot = sqrt(sum(s.Xg(:,1:3).^2,2));
+
+%s.Vx = 0.5*[s.X(1:end-1,4)+s.X(2:end,4);s.X(end,4)+Xend(4)];
+%s.Vy = 0.5*[s.X(1:end-1,5)+s.X(2:end,5);s.X(end,5)+Xend(5)];
+%s.Vz = 0.5*[s.X(1:end-1,6)+s.X(2:end,6);s.X(end,6)+Xend(6)];
+
+s.v2 = sum(s.X(:,4:6).^2,2);
+%s.v2c = s.v2-mean(s.v2);
+%fprintf(1,'%s: v2 %10g %10g\n',s.name, mean(s.v2), var(s.v2))
+%fprintf(1,'%s: v2c %10g %10g\n',s.name, mean(s.v2c), var(s.v2c))
+
+%s.v21 = s.Vx.^2+s.Vy.^2+s.Vz.^2;
+%size(s.v2),size(s.v21)
+%plot(s.t,sqrt(s.v2b),s.t,sqrt(s.v21)); title('|v|^2'), pause
+
+%s.Ek = 1/2*mp*s.v2b/eV;  % classic
+s.Ek = (1./sqrt(1-s.v2/c^2)-1)*mp*c^2/eV; % relativistic
+
+if contains(s.name,'CF'),
+  % Only valid for Omega along z-axis
+  %s.Ep = -.5*mp*Omega^2*Rcylf.^2/eV; % relativistic
+  s.Ep = -.5*mp*((Omp(:)'*Omp(:))*s.Rtot.^2-...
+              (Omp(:)'*s.X(:,1:3)')'.^2)/eV; % relativistic
+  % Adjust potential energy of rotation so that minimum is zero
+  s.Ep = s.Ep-min(s.Ep(:));
+  s.E = s.Ek+s.Ep;
+else
+  s.E = s.Ek;
+end
+% mean and variance
+s.meanE = mean(s.E);
+s.stdE = std(s.E);
+fprintf(1,'%s <E> = %10g MeV, std(E) = %10g eV std(E)/<Eb> = %10g\n',...
+        s.name, s.meanE/1e6, s.stdE, s.stdE/s.meanE);
+
+% Compute b dot gradB and mu 
+[s.B,s.gradB,s.curvB] = mdiscMagneticField3D(Rm,...
+                     {s.X(:,1)/Re,s.X(:,2)/Re,s.X(:,3)/Re});
+Bm = sqrt(s.B{4});
+% apparently slower
+%B = [s.B{1},s.B{2},s.B{3}];
+%gradB = [s.gradB{1},s.gradB{2},s.gradB{3}];
+%s.bgradB = sum(B.*gradB,2)./Bm;
+%s.Vpar = sum(B.*s.X(:,4:6),2)./Bm;
+s.bgradB = (s.B{1}.*s.gradB{1}+s.B{2}.*s.gradB{2}+s.B{3}.*s.gradB{3})./Bm;
+
+%Vper2 = V2-(B{1}.*X(:,4)+B{2}.*X(:,5)+B{3}.*X(:,6)).^2./b;
+s.V2 = sum(s.X(:,4:6).^2,2);
+s.Vpar = (s.B{1}.*s.X(:,4)+s.B{2}.*s.X(:,5)+s.B{3}.*s.X(:,6))./Bm;
+%Vparb1 = (B{1}.*Vx+B{2}.*Vy+B{3}.*Vz)./b;
+%plot(tb,(Vparb-Vparb1)./Vparb), title('vpar'); pause
+s.Vper = sqrt(s.V2-s.Vpar.^2);
+%Vperb1 = sqrt(V2b-Vparb1.^2);
+s.Vper2 = s.V2-s.Vpar.^2;
+% Instantaneous first invariant Eq.14 
+s.mui = gamma^2*mp*s.Vper2./(2*Bm);
+% pitch angle
+s.ai = atan2d(s.Vper,s.Vpar);
+
+% Compute latitude and longitude
+s.lat = atan2d(s.Z,s.Rcyl);        % atan(Rcyl/Z)
+s.lon = 180/pi*unwrap(atan2(s.X(:,2),s.X(:,1))); % atan(X/Y);
+
+% estimate L from instantaneous L
+%coslat = Rcyl./R; Ls = R./coslat.^2/Re;
+s.L = s.Rtot.^3./s.Rcyl.^2/Re;
+s.meanL = mean(s.L);
+fprintf(1,'%s: L estimated = %.2f\n', s.name, s.meanL);
+
+% bounce period fit
+fprintf(1,'**** Bounce period %s\n',s.name);
+% identify zero crossings
+izc = find(s.lat(1:end-1).*s.lat(2:end)<0);
+% average time between zero-crossings times 2 = exact period
+s.Tbe = 2*mean(diff(s.t(izc)));
+% initial period value for fit
+% average of dipole Tb and Tbe with weight 1 and 2
+s.Tbi= (Tb+2*s.Tbe)/3;
+% exact period
+s.Tbi= s.Tbe;
+if isfinite(s.Tbe),
+fprintf(1,'Init Tbd=%.2f Tbe=%.2f Tbi=%.2f\n',Tb,s.Tbe,s.Tbi);
+s.latfit = getbounceperiod(s.t,s.lat,2*pi/s.Tbi);
+s.latfit1 = fitTb(s.t,s.lat,s.Tbi);
+else
+s.latfit = [];
+s.latfit1 = [];
+end
+
+% drift period fit
+if ~isempty(s.latfit),
+fprintf(1,'**** Drift period %s\n',s.name);
+s.lonfit = getdriftperiod(s.t,s.lon,2*pi/s.latfit.tb,360);
+s.lonfit1 = fitTd(s.t,s.lon,s.latfit.tb,360);
+else
+s.lonfit = [];
+s.lonfit1 = [];
+end
+
+
+end
+
+
+function s = initVar(s,ts,dt)
+
+s.t = ts;
+s.dt = dt;
+s.X = zeros(length(ts),6);
+s.Xg = zeros(length(ts),3);
+s.rg = zeros(length(ts),3);
+if exist('gpuArray','builtin'),
+  s.t = gpuArray(s.t);
+  s.X = gpuArray(s.X);
+  s.Xg = gpuArray(s.Xg);
+	s.rg = gpuArray(s.rg);
+end
+
+end
+
+function rn = BorisIterCF(r,h)
+
+x = r(1); y = r(2); z = r(3);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-%[Bx,By,Bz] = deal(B{1:3});
-Bx = B{1}; By = B{2}; Bz = B{3};
+Bxyz = [B{1}, B{2}, B{3}];
 
 fac = qOverM/gamma;
 
 %T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
-Bxyz = [Bx; By; Bz];
 T = (fac*h/2) * Bxyz;
-%T = fac*[Bx,By,Bz]'*h/2;
-S = 2.0 * T /(1+T'*T);
+S = 2.0 * T /(1+T*T');
 
-%V = [vx,vy,vz]';
-%R = [x,y,z]';
-R = r(1:3)';
-V = r(4:6)';
+R = r(1:3);
+V = r(4:6);
 
 % https://en.wikipedia.org/wiki/Centrifugal_force
 % Centrifugal force dv/dt = -\omega x (\omega x r) 
@@ -676,47 +682,40 @@ dV = -cross(Omp,cross(Omp,R))*h/2;
 %dV = (Omega*[x,y,0]'*h/2 -2*Omega*[-vy,vx,0]')*h/2;
 %dV = -cross(Omp,cross(Omp,R))*h/2-2*cross(Omp,V)*h/2;
 
-vm = V+dV;
-vp = vm + cross(vm,T);
-vp = vm + cross(vp,S);
+vminus = V+dV;
+vplus = vminus + cross(vminus,T);
+vplus = vminus + cross(vplus,S);
 
-V = vp+dV;
+V = vplus+dV;
 R = R + V*h;
 
-rn = [R;V];
+rn = [R,V];
 
 end
 
 function rn = BorisIter(r,h)
 
-%rn = zeros(size(r));
-%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
-x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
+x = r(1); y = r(2); z = r(3);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-%[Bx,By,Bz] = deal(B{1:3});
-Bx = B{1}; By = B{2}; Bz = B{3};
+Bxyz = [B{1}, B{2}, B{3}];
 
 fac = qOverM/gamma;
 
 %T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
-Bxyz = [Bx; By; Bz];
 T = (fac*h/2) * Bxyz;
-%T = fac*[Bx,By,Bz]'*h/2;
-S = 2.0 * T /(1+T'*T);
+S = 2.0 * T /(1+T*T');
 
-%R = [x,y,z]';
-%V = [vx,vy,vz]';
-R = r(1:3)';
-V = r(4:6)';
+R = r(1:3);
+V = r(4:6);
 
-v = V + cross(V,T);
-V = V + cross(v,S);
+vprime = V + cross(V,T);
+V = V + cross(vprime,S);
 
 R = R + V*h;
 
-rn = [R;V];
+rn = [R,V];
 
 end
 
@@ -724,53 +723,25 @@ function r0 = BorisInit(r,h)
 
 % https://physics.stackexchange.com/questions/296863/how-to-initialize-bootstrap-the-boris-algorithm
 
-r0 = zeros(size(r));
-
-%[x,y,z,vx,vy,vz] = deal(r(1),r(2),r(3),r(4),r(5),r(6));
-x = r(1); y = r(2); z = r(3); vx = r(4); vy = r(5); vz = r(6);
+x = r(1); y = r(2); z = r(3);
 
 B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
-%[Bx,By,Bz] = deal(B{1:3});
-Bx = B{1}; By = B{2}; Bz = B{3};
+Bxyz = [B{1}, B{2}, B{3}];
 
 fac = qOverM/gamma;
 
-if 0,
-h = -h;
-T = fac*[Bx,By,Bz]'*h/2;
-S = 2.0 * T /(1+T'*T);
-
-V = [vx,vy,vz]';
-R = [x,y,z]';
-
-v = V + cross(V,T);
-V = V + cross(v,S);
-
-R1 = R + V*h;
-
-V = (R-R1)/abs(h);
-
-h = -h;
-end
-
-if 1,
 % dt is now -dt/2 (to go backward in time for dt/2)
 h = -h/2;
-T = fac*[Bx,By,Bz]'*h/2;
-S = 2.0 * T /(1+T'*T);
+T = fac*Bxyz*h/2;
+S = 2.0 * T /(1+T*T');
 
-V = [vx,vy,vz]';
-R = [x,y,z]';
+V = r(4:6);
 
-v = V + cross(V,T);
-V = V + cross(v,S);
+vprime = V + cross(V,T);
+V = V + cross(vprime,S);
 
-end
-
-%pause
-
-r0 = [R;V];
+r0 = [r(1:3),V];
 
 end
 
@@ -820,11 +791,12 @@ end
 function [Xg,rg] = getGyroRadius(Rp,Vp)
 
 tol = 1e-10;
+maxIter = 100;
 
 Rp = Rp(:);
 Vp = Vp(:);
 
-rg2 = 0;
+rg = zeros(3,1);
 relerr = Inf;
 
 % initial position of guiding centre
@@ -832,36 +804,43 @@ Xg = Rp;
 
 fac = -gamma/qOverM;
 
-while relerr > tol,
+iter = 0;
+
+while relerr > tol && iter < maxIter
+
+iter = iter + 1;
 
 % magnetic field at guiding centre position
 B = mdiscMagneticField3D(Rm,{Xg(1)/Re,Xg(2)/Re,Xg(3)/Re});
-%[Bx,By,Bz] = deal(B{1:3});
-Bx = B{1}; By = B{2}; Bz = B{3};
-b2 = B{4};
 
-Bxyz = [Bx; By; Bz];
+Bxyz = [B{1}; B{2}; B{3}];
+Bm2 = B{4}; % |B|^2
 
 % parallel and perpendicular projection 
-Vppar = (dot(Bxyz,Vp)/b2) * Bxyz;
+Vppar = (dot(Bxyz,Vp)/Bm2)*Bxyz;
 Vpper = Vp-Vppar;
 
+oldrg = rg;
+
 % gyro radius rg = -gamma m/q (Vper x B)/B^2
-rg = fac * cross(Vpper,Bxyz)/b2;
+rg = -fac * cross(Vpper,Bxyz)/Bm2;
 
-oldrg2 = rg2;
-rg2 = dot(rg,rg);
+delta2 = dot(rg-oldrg, rg-oldrg);
+relerr = delta2 / max(dot(rg,rg), eps);
 
-relerr = abs(rg2-oldrg2)/max(rg2,eps);
+Xg = Rp+rg;
 
-Xg = Rp-rg;
+end
 
+if iter == maxIter
+  warning('Guiding-centre iteration did not converge.');
 end
 
 if 0
 plot3(Xg(1)/Re,Xg(2)/Re,Xg(3)/Re,'x')
 hold on
-quiver3(Xg(1)/Re,Xg(2)/Re,Xg(3)/Re,Bx/sqrt(b2),By/sqrt(b2),Bz/sqrt(b2),.2,'b.')
+quiver3(Xg(1)/Re,Xg(2)/Re,Xg(3)/Re,...
+        Bx/sqrt(Bm2),By/sqrt(Bm2),Bz/sqrt(Bm2),.2,'b.')
 plot3(Rp(1)/Re,Rp(2)/Re,Rp(3)/Re,'x')
 quiver3(Rp(1)/Re,Rp(2)/Re,Rp(3)/Re,Vp(1)/Vpr,Vp(2)/Vpr,Vp(3)/Vpr,.2,'b.')
 %quiver3(X(1)/Re,X(2)/Re,X(3)/Re,X(4)/Vpr,X(5)/Vpr,X(6)/Vpr,.2,'r.')
