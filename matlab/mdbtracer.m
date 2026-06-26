@@ -533,6 +533,9 @@ s.Zg = s.Xg(:,3);
 s.Rgcyl = sqrt(sum(s.Xg(:,1:2).^2,2));
 s.Rgtot = sqrt(sum(s.Xg(:,1:3).^2,2));
 
+% gyro radius
+s.rhog = sqrt(sum(s.rg(:,1:3).^2,2));
+
 %s.Vx = 0.5*[s.X(1:end-1,4)+s.X(2:end,4);s.X(end,4)+Xend(4)];
 %s.Vy = 0.5*[s.X(1:end-1,5)+s.X(2:end,5);s.X(end,5)+Xend(5)];
 %s.Vz = 0.5*[s.X(1:end-1,6)+s.X(2:end,6);s.X(end,6)+Xend(6)];
@@ -566,9 +569,23 @@ s.stdE = std(s.E);
 fprintf(1,'%s <E> = %10g MeV, std(E) = %10g eV std(E)/<Eb> = %10g\n',...
         s.name, s.meanE/1e6, s.stdE, s.stdE/s.meanE);
 
-% Compute b dot gradB and mu 
+% grad B and curvature parameters 
 [s.B,s.gradB,s.curvB] = mdiscMagneticField3D(Rm,...
                      {s.X(:,1)/Re,s.X(:,2)/Re,s.X(:,3)/Re});
+
+% magnetic-field scale height/scale length
+s.Lb = s.gradB{5};
+% magnetic-field inhomogeneity parameter or magnetization parameter
+% or adiabaticity parameter or gyrokinetic ordering parameter
+s.Eb = s.rhog./s.Lb;
+
+% local radius of curvature of the magnetic field line
+s.Rc = s.curvB{1};
+% curvature parameter or curvature magnetization parameter
+% or magnetic-field inhomogeneity parameter
+% or guiding-center ordering parameter due to curvature
+s.Ec = s.rhog./s.Rc;
+
 Bm = sqrt(s.B{4});
 % apparently slower
 %B = [s.B{1},s.B{2},s.B{3}];
@@ -589,6 +606,8 @@ s.Vper2 = s.V2-s.Vpar.^2;
 s.mui = gamma^2*mp*s.Vper2./(2*Bm);
 % pitch angle
 s.ai = atan2d(s.Vper,s.Vpar);
+
+% 
 
 % Compute latitude and longitude
 s.lat = atan2d(s.Z,s.Rcyl);        % atan(Rcyl/Z)
