@@ -2,16 +2,19 @@ function [B,varargout] = mdiscMagneticField3D(rm, r)
 % function [B,gradB,curvB] = mdiscMagneticField3D(rm, r)
 %
 %    rm     : position of the magnetic moment
-%    r      : cartesion coordinates where to calculate magnetic field in RJ
-%    B      : magnetodisc magnetic field (cell array of length(m), each cell is
-%             an array of size(r))
-%             = = {Bx, By, Bz, Bm^2}
-%    gradB  : gradient of the magnetodisc magnetic field (cell array of
-%             length(m), each cell is an array of size(r))
-%             = {gradBx, gradBy, gradBz, gradBm, LB}
-%    curvB  : magnetic field curvature parameters (cell array of length(m),
-%             each cell is an array of size(r))
-%             = {Rc, Kx, Ky, Kz, Km}
+%    r      : Cartesian coordinates where to calculate magnetic field [Rp]
+%    B = {Bx, By, Bz, Bm}
+%           : magnetodisc magnetic field 
+%             (cell array of length(m), each cell is an array of size(r))
+%             {[T], [T], [T], [T]}
+%    gradB = {dBm/dx, dBm/dy, dBm/dz, |grad Bm|, LB=Bm/|grad Bm|}
+%           : optional magnetic field gradient parameters
+%             (cell array of length(m), each cell is an array of size(r))
+%            {[T/m], [T/m], [T/m], [T/m], [m]}
+%    curvB = {Kx, Ky, Kz, Km, Rc=1/Km}
+%           : optional magnetic field curvature parameters 
+%             (cell array of length(m), each cell is an array of size(r))
+%            {[m-1], [m-1], [m-1], [m-1], [m]}
 %
 %
 % Example to compare Jupiter's magnetodisc to a dipole
@@ -57,24 +60,24 @@ function [B,varargout] = mdiscMagneticField3D(rm, r)
 %   y = r(ir).*cos(t(ir))*sin(p);
 %   z = r(ir).*sin(t(ir));
 %   [B,gradB] = mdiscMagneticField3D(Rd,{x,y,z});
-%   b = sqrt(B{1}.^2+B{2}.^2+B{3}.^2);
-%   db = sqrt(gradB{1}.^2+gradB{2}.^2+gradB{3}.^2);
-%   quiver(x,z,B{1}./b,B{3}./b,0.5,'color',lut(1,:));
-%   quiver(x,z,gradB{1}./db,gradB{3}./db,0.5,'color',lut(2,:));
+%   Bm = B{4};
+%   gradBm = gradB{4};
+%   quiver(x,z,B{1}./Bm,B{3}./Bm,0.5,'color',lut(1,:));
+%   quiver(x,z,gradB{1}./gradBm,gradB{3}./gradBm,0.5,'color',lut(2,:));
 %   [Bd,gradBd] = dipoleMagneticField3D(Md,Rd,{Re*x,Re*y,Re*z});
-%   bd = sqrt(Bd{1}.^2+Bd{2}.^2+Bd{3}.^2);
-%   dbd = sqrt(gradBd{1}.^2+gradBd{2}.^2+gradBd{3}.^2);
-%   quiver(x,z,Bd{1}./bd,Bd{3}./bd,0.5,'color',lut(3,:));
-%   quiver(x,z,gradBd{1}./dbd,gradBd{3}./dbd,0.5,'color',lut(4,:));
+%   Bdm = Bd{4};
+%   gradBdm = gradBd{4};
+%   quiver(x,z,Bd{1}./Bdm,Bd{3}./Bdm,0.5,'color',lut(3,:));
+%   quiver(x,z,gradBd{1}./gradBdm,gradBd{3}./gradBdm,0.5,'color',lut(4,:));
 % end
 % plot(xc,zc,'k-','LineWidth',2), axis equal
 % hold off
 % xlabel('x'); ylabel('z'); legend({'B','\nabla B','Bd','\nabla Bd'});
 
 %
-% $Id: mdiscMagneticField3D.m,v 1.5 2026/06/24 13:18:36 patrick Exp $
+% $Id: mdiscMagneticField3D.m,v 1.6 2026/07/08 13:17:50 patrick Exp $
 %
-% Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
+% Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 %
 % All Rights Reserved.
 %
@@ -130,22 +133,22 @@ else
   [Br, Bt, gradB, curvB] = MDiscField(R,theta);
 end
 
-B2 =  Br.^2+Bt.^2;
+Bm = sqrt(Br.^2+Bt.^2);
 
 Bx = (Br.*coslat+Bt.*sinlat).*coslon;
 By = (Br.*coslat+Bt.*sinlat).*sinlon;
 Bz = (Br.*sinlat-Bt.*coslat);
 
-B = {Bx,By,Bz,B2};
+B = {Bx,By,Bz,Bm};
 
 if nargout>1,
 
-dBrdt = gradB{1};
-dBtdt = gradB{2};
+dBdr = gradB{1};
+dBdt = gradB{2};
 
-gradBx = (dBrdt.*coslat+dBtdt.*sinlat).*coslon;
-gradBy = (dBrdt.*coslat+dBtdt.*sinlat).*sinlon;
-gradBz = (dBrdt.*sinlat-dBtdt.*coslat);
+gradBx = (dBdr.*coslat+dBdt.*sinlat).*coslon;
+gradBy = (dBdr.*coslat+dBdt.*sinlat).*sinlon;
+gradBz = (dBdr.*sinlat-dBdt.*coslat);
 
 gradBm = gradB{3};
 LB = gradB{4};
@@ -156,17 +159,18 @@ end
 
 if nargout>2,
 
-Rc = curvB{1};
 
-Kr = curvB{2};
-Kt = curvB{3};
+Kr = curvB{1};
+Kt = curvB{2};
 
 Kx = (Kr.*coslat+Kt.*sinlat).*coslon;
 Ky = (Kr.*coslat+Kt.*sinlat).*sinlon;
 Kz = (Kr.*sinlat-Kt.*coslat);
 
-Km = curvB{4};
+Km = curvB{3};
 
-varargout{2} = {Rc, Kx, Ky, Kz, Km};
+Rc = curvB{4};
+
+varargout{2} = {Kx, Ky, Kz, Km, Rc};
 
 end
