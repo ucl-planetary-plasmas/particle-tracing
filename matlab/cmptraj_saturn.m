@@ -15,7 +15,7 @@ function cmptraj_saturn(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_saturn.m,v 1.8 2026/07/08 17:01:22 patrick Exp $
+% $Id: cmptraj_saturn.m,v 1.9 2026/07/08 17:27:19 patrick Exp $
 %
 % Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -395,7 +395,7 @@ end
 
 fac = qOverM/gamma;
 
-%T = -tan(B{4}*h/2.0)*[Bx,By,Bz]'/B{4};
+%T = -[Bx,By,Bz]'/B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 
