@@ -72,10 +72,11 @@ function [B,varargout] = mdiscMagneticField3D(rm, r)
 % end
 % plot(xc,zc,'k-','LineWidth',2), axis equal
 % hold off
-% xlabel('x'); ylabel('z'); legend({'B','\nabla B','Bd','\nabla Bd'});
+% legend({'B','\nabla{B}','B_d','\nabla{B_d}'});
+% xlabel('x'); ylabel('z'); 
 
 %
-% $Id: mdiscMagneticField3D.m,v 1.6 2026/07/08 13:17:50 patrick Exp $
+% $Id: mdiscMagneticField3D.m,v 1.7 2026/07/08 16:39:37 patrick Exp $
 %
 % Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 %
