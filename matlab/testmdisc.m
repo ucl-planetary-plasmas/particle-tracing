@@ -1,5 +1,7 @@
-function testmdisc
-% funnction testmdisc
+function testmdisc(dipole_on)
+% function testmdisc(dipole_on)
+%
+% dipole_on: optional dipole_on flag
 %
 % Compare magnetodisc field and equivalent dipolar field Cartesian
 % components at the planet's surface.
@@ -9,7 +11,7 @@ function testmdisc
 %
 
 %
-% $Id: testmdisc.m,v 1.3 2017/10/18 08:01:55 patrick Exp $
+% $Id: testmdisc.m,v 1.4 2026/07/08 17:42:39 patrick Exp $
 %
 % Copyright (c) 2017 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -29,18 +31,22 @@ function testmdisc
 
 clf
 
-global MDFile
+global MDFile DipoleOn
 
 % Jupiter magnetodisc
 MDFile = 'jup_mdisc_kh3e7_rmp90.mat';
+
+if ~exist('dipole_on','var') | isempty(dipole_on)
+  DipoleOn = false;
+else
+  DipoleOn = dipole_on;
+end
+
 % clear function with persistent variables
 clear MDiscField
 load(MDFile,'MD');
 
-% Jupiter equatorial radius in m
-%Re = 71492.0e3; 
 Re = MD.planet.r0;
-
 % Jupiter dipole field
 % Magnetic equator field strength in T
 % B0 = 4.2800e-04 
@@ -56,12 +62,12 @@ plotmdisc()
 
 pause
 
-
 MDFile = 'sat_mdisc_kh2e6_rmp25.mat';
 % clear function with persistent variables
 clear MDiscField
 load(MDFile,'MD');
 
+Re = MD.planet.r0;
 % Saturn dipole field
 % Magnetic equator field strength in T
 % B0 = 2.1160e-05;
@@ -74,28 +80,26 @@ B0 = MD.planet.B0 * MD.v2d.Bthdip(MD.dims.imu0,1);
 Md = [0,0,B0*Re^3];  % Magnetic moment
 Rd = [0,0,0];        % Centered moment
 
-% Saturn magnetodisc
-global MDFile
-MDFile = 'sat_mdisc_kh2e6_rmp25.mat';
-
 plotmdisc()
 
 function plotmdisc()
 
-fprintf(1,'%10e\n',Md(3));
+fprintf(1,'M = %10e A m^2, Re = %10e m\n',Md(3),Re);
 
-p = 0;
-t = linspace(-pi/2,pi/2,31);
+p = 0; % azimuth
+t = linspace(-pi/2,pi/2,31); % latitude
+%t = linspace(0,pi,31); % colatitude
 
-[B, gradB]=mdiscMagneticField3D(Rd,{1,0,0}); 
+% surface field
+[B, gradB, curvB] = mdiscMagneticField3D(Rd,{1,0,0}); 
 fprintf(1,'B0 mdisc  (%10e,%10e,%10e)\n', B{1:3})
-[B, gradB]=dipoleMagneticField3D(Md,Rd,{Re,0,0});
+[B, gradB, curvB] = dipoleMagneticField3D(Md,Rd,{Re,0,0});
 fprintf(1,'B0 dipole (%10e,%10e,%10e)\n', B{1:3})
 a = 0;
 a = [-pi/3, -pi/6, 0, pi/6, pi/3];
 cosa = cos(a); sina = sin(a);
 r = {Re*cosa,zeros(size(cosa)),Re*sina};
-[Bd,gradBd]=dipoleMagneticField3D(Md,Rd,r);
+[Bd,gradBd, curvBd] = dipoleMagneticField3D(Md,Rd,r);
 
 %return
 
@@ -108,8 +112,8 @@ Bd = dipoleMagneticField3D(Md,Rd,{Re*x,Re*y,Re*z});
 
 xc = x; yc = y; zc = z;
 
-plot(t,[B{1};Bd{1};B{3};Bd{3}])
-xlabel('\theta');legend({'B_x','B_{xd}','B_z','B_{zd}'})
+plot(t,[B{1};Bd{1};B{2};Bd{2};B{3};Bd{3}])
+xlabel('\theta');legend({'B_x','B_{xd}','B_y','B_{yd}','B_z','B_{zd}'})
 
 lut = get(gca,'colororder');
 
@@ -123,20 +127,30 @@ for L=[2,5,10],
   x = r(ir).*cos(t(ir))*cos(p);
   y = r(ir).*cos(t(ir))*sin(p);
   z = r(ir).*sin(t(ir));
-  [B,gradB] = mdiscMagneticField3D(Rd,{x,y,z});
-  b = sqrt(B{1}.^2+B{2}.^2+B{3}.^2);
-	db = sqrt(gradB{1}.^2+gradB{2}.^2+gradB{3}.^2);
-  quiver(x,z,B{1}./b,B{3}./b,0.5,'color',lut(1,:));
-	quiver(x,z,gradB{1}./db,gradB{3}./db,0.5,'Color',lut(2,:));
-  [Bd,gradBd] = dipoleMagneticField3D(Md,Rd,{Re*x,Re*y,Re*z});
-  bd=sqrt(Bd{1}.^2+Bd{2}.^2+Bd{3}.^2);
-	dbd = sqrt(gradBd{1}.^2+gradBd{2}.^2+gradBd{3}.^2);
-  quiver(x,z,Bd{1}./bd,Bd{3}./bd,0.5,'Color',lut(3,:));
-	quiver(x,z,gradBd{1}./dbd,gradBd{3}./dbd,0.5,'Color',lut(4,:));
+
+	% mdisc
+  [B,gradB,curvB] = mdiscMagneticField3D(Rd,{x,y,z});
+  Bm = B{4};
+	gradBm = gradB{4};
+	Km= curvB{4};
+  quiver(x,z,B{1}./Bm,B{3}./Bm,0.5,'color',lut(1,:));
+	quiver(x,z,gradB{1}./gradBm,gradB{3}./gradBm,0.5,'Color',lut(2,:));
+	quiver(x,z,curvB{1}./Km,curvB{3}./Km,0.5,'Color',lut(3,:));
+
+  % dipole
+  [Bd,gradBd,curvBd] = dipoleMagneticField3D(Md,Rd,{Re*x,Re*y,Re*z});
+  Bdm = Bd{4};
+	gradBdm = gradBd{4};
+	Kdm= curvBd{4};
+  quiver(x,z,Bd{1}./Bdm,Bd{3}./Bdm,0.5,'Color',lut(4,:));
+	quiver(x,z,gradBd{1}./gradBdm,gradBd{3}./gradBdm,0.5,'Color',lut(5,:));
+	quiver(x,z,curvBd{1}./Kdm,curvBd{3}./Kdm,0.5,'Color',lut(6,:));
 end
 plot(xc,zc,'k-','LineWidth',2), axis equal
 hold off
-xlabel('x');ylabel('z'); legend({'B','\nabla B','Bd','\nabla Bd'});
+xlabel('x');
+ylabel('z'); 
+legend({'B_m','\nabla{B_m}','\kappa_m','B_d','\nabla{B_d}','\kappa_d'});
 
 end
 
