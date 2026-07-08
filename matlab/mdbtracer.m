@@ -54,7 +54,7 @@ function mdbtracer(mdfile,partype,Ep,Ri,ai,timespec,savefile,pauseOn,plotOn,nper
 % but don't save the simulation data.
 
 %
-% $Id: mdbtracer.m,v 1.15 2026/06/24 21:40:11 patrick Exp $
+% $Id: mdbtracer.m,v 1.16 2026/07/08 17:33:36 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -130,8 +130,10 @@ fprintf(1,'Dipole tilt = %.1f deg\n',tilt*180/pi);
 B0 = MD.planet.B0;
 % corrected to match Bthdip(mu=0,r=1)
 B0 = B0 * MD.v2d.Bthdip(MD.dims.imu0,1);
-Md = [0,0,B0*Re^3];  % Magnetic moment \mu_0 M/(4\pi) in T m^3
-Rm = [0,0,0];        % Centered moment
+% Dipole magnetic moment (Beq = \mu_0/(4 pi Req^3) Md)  in A m^2
+Md = [0,0,B0*Re^3];  
+% Centered dipole magnetic moment
+Rm = [0,0,0];        
 
 % SI constants
 e   = 1.60217733e-19; % elementary charge C
@@ -206,7 +208,7 @@ Xo = [R,            0,            0,...
 
 % magnetic field at initial position
 B = mdiscMagneticField3D(Rm,{Xo(1)/Re,Xo(2)/Re,Xo(3)/Re});
-Bm = sqrt(B{4});
+Bm = B{4};
 
 fprintf(1,'Ri=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*Bm)
 
@@ -258,7 +260,7 @@ end
 % B from dipole
 B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at dipole mirror point
-tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
+tm = 2*pi/(qOverM/gamma*B{4});
 % number of iteration such that dt \sim max([tm/3,Tc/5])
 nsteps = ceil(diff(tspan)/(Tc/npertc));
 fprintf(1,'%.10g %.10g %.10g %.10g\n',tspan(1),tspan(end),Tc,nsteps)
@@ -580,13 +582,13 @@ s.Lb = s.gradB{5};
 s.Eb = s.rhog./s.Lb;
 
 % local radius of curvature of the magnetic field line
-s.Rc = s.curvB{1};
+s.Rc = s.curvB{5};
 % curvature parameter or curvature magnetization parameter
 % or magnetic-field inhomogeneity parameter
 % or guiding-center ordering parameter due to curvature
 s.Ec = s.rhog./s.Rc;
 
-Bm = sqrt(s.B{4});
+Bm = s.B{4};
 % apparently slower
 %B = [s.B{1},s.B{2},s.B{3}];
 %gradB = [s.gradB{1},s.gradB{2},s.gradB{3}];
@@ -597,7 +599,7 @@ s.bgradB = (s.B{1}.*s.gradB{1}+s.B{2}.*s.gradB{2}+s.B{3}.*s.gradB{3})./Bm;
 %Vper2 = V2-(B{1}.*X(:,4)+B{2}.*X(:,5)+B{3}.*X(:,6)).^2./b;
 s.V2 = sum(s.X(:,4:6).^2,2);
 s.Vpar = (s.B{1}.*s.X(:,4)+s.B{2}.*s.X(:,5)+s.B{3}.*s.X(:,6))./Bm;
-%Vparb1 = (B{1}.*Vx+B{2}.*Vy+B{3}.*Vz)./b;
+%Vparb1 = (B{1}.*Vx+B{2}.*Vy+B{3}.*Vz)./Bm;
 %plot(tb,(Vparb-Vparb1)./Vparb), title('vpar'); pause
 s.Vper = sqrt(s.V2-s.Vpar.^2);
 %Vperb1 = sqrt(V2b-Vparb1.^2);
@@ -606,8 +608,6 @@ s.Vper2 = s.V2-s.Vpar.^2;
 s.mui = gamma^2*mp*s.Vper2./(2*Bm);
 % pitch angle
 s.ai = atan2d(s.Vper,s.Vpar);
-
-% 
 
 % Compute latitude and longitude
 s.lat = atan2d(s.Z,s.Rcyl);        % atan(Rcyl/Z)
@@ -679,7 +679,7 @@ Bxyz = [B{1}, B{2}, B{3}];
 
 fac = qOverM/gamma;
 
-%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
+%T = -[Bx,By,Bz]'/B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = (fac*h/2) * Bxyz;
 S = 2.0 * T /(1+T*T');
 
@@ -722,7 +722,7 @@ Bxyz = [B{1}, B{2}, B{3}];
 
 fac = qOverM/gamma;
 
-%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
+%T = -[Bx,By,Bz]'/B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = (fac*h/2) * Bxyz;
 S = 2.0 * T /(1+T*T');
 
@@ -769,11 +769,11 @@ function [tc,tb,td] = periods(R,alpha)
 B = mdiscMagneticField3D(Rm,{R/Re,0,0});
 Be = mdiscMagneticField3D(Rm,{Re/Re,0,0});
 
-B  = sqrt(B{4});
-Be = sqrt(Be{4});
+Bm  = B{4};
+Bme = Be{4};
 
 % Angular gyro frequency
-Omegac = abs(qOverM)/gamma*B;
+Omegac = abs(qOverM)/gamma*Bm;
 
 % Gyro period
 tc = 2*pi/Omegac;
@@ -787,7 +787,7 @@ tb = fac*(R/Re)*c/Vpr*(1-0.4635*sind(alpha)^0.75);
 fprintf(1,'Bounce period Boris\n');%tb = R*sqrt(2)/Vpr*(3.7-1.6*sind(alpha));
 
 % Drift period 
-td = 2*pi*abs(qOverM)*Be*Re^3/Vpr^2/R*(1-1/3*(sind(alpha))^0.62);
+td = 2*pi*abs(qOverM)*Bme*Re^3/Vpr^2/R*(1-1/3*(sind(alpha))^0.62);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node23.html
 %td = pi*qp*Be*Re^3/(3*EMeV*R)/(0.35+0.15*sind(alpha));
 %td = 1.05/(EMeV/(1e6*eV))/(R/Re)/(1+0.43*sind(alpha))*3600;
@@ -833,7 +833,8 @@ iter = iter + 1;
 B = mdiscMagneticField3D(Rm,{Xg(1)/Re,Xg(2)/Re,Xg(3)/Re});
 
 Bxyz = [B{1}; B{2}; B{3}];
-Bm2 = B{4}; % |B|^2
+Bm2 = B{4}.^2; % |B|^2
+
 
 % parallel and perpendicular projection 
 Vppar = (dot(Bxyz,Vp)/Bm2)*Bxyz;
