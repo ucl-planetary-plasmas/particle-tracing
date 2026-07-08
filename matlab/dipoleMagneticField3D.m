@@ -52,7 +52,7 @@ function [B,varargout] = dipoleMagneticField3D(M, rm, r)
 % axis equal
 
 %
-% $Id: dipoleMagneticField3D.m,v 1.3 2026/07/08 16:40:22 patrick Exp $
+% $Id: dipoleMagneticField3D.m,v 1.4 2026/07/08 17:51:32 patrick Exp $
 %
 % Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 %
@@ -257,7 +257,7 @@ fac2 = -QdotX./Q4;
 % K = 1/Q^2 * (X - (Q.X)/Q^2 Q) = 1/Q^2 * (I-bb) X
 curvBx = Xx.*fac1+fac2.*Qx;
 curvBy = Xy.*fac1+fac2.*Qy;
-curvBz = Xz.*fac1+fac2.*Qz
+curvBz = Xz.*fac1+fac2.*Qz;
 
 % K = (9\alpha^2+6\alpha^2 R^2 M^2 -3 R^4 M^4)/R^2/(R^2 M^2+3\alpha^2 R
 %     -6\alpha R^2(R^2 M^2+\alpha^2)/R^2/(R^2 M^2+3\alpha^2 M
