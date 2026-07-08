@@ -30,7 +30,7 @@ function mdtracer(mdfile,Ep,Ri,ai,timespec,savefile)
 % but don't save the simulation data.
 
 %
-% $Id: mdtracer.m,v 1.7 2019/06/10 16:16:36 patrick Exp $
+% $Id: mdtracer.m,v 1.8 2026/07/08 18:47:34 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -122,22 +122,22 @@ Xo = [R;            0;            0;...
 
 % initial guiding centre x0,y0,z0,vpar0
 B = mdiscMagneticField3D(Rm,{Xo(1)/Re,Xo(2)/Re,Xo(3)/Re});
-b = sqrt(B{4});
+Bm = B{4};
 
-fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
+fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*Bm)
 
 % smaller vpar gives larger vper thus guiding centre motion
-%vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
-vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
+%vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/Bm);
+vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/Bm);
 vper = sqrt(V2-vpar^2);
 % gyro radius
-rho = abs(gamma/qOverM*vper/b);
+rho = abs(gamma/qOverM*vper/Bm);
 % add or substract gyroradius depending on sign of q and magnetic moment
 Xogc = [R-sign(qOverM*Md(3))*rho;0;0;vpar];
 B = mdiscMagneticField3D(Rm,{Xogc(1)/Re,Xogc(2)/Re,Xogc(3)/Re});
-b = sqrt(B{4});
+Bm = B{4};
 % first invariant mu
-mu = gamma^2*mp*vper^2/(2*b);
+mu = gamma^2*mp*vper^2/(2*Bm);
 
 [tc,tb,td] = periods(R,alpha);
 
@@ -176,7 +176,7 @@ end
 %B = mdiscMagneticField3D(Rm,{rm{1}/Re,rm{2}/Re,rm{3}/Re});
 B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at mirror point
-tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
+tm = 2*pi/(qOverM/gamma*B{4});
 % number of iteration such that dt \sim max([tm/3,Tc/5])
 %tb = linspace(tspan(1),tspan(end),min(fix(diff(tspan)./[tm/3,Tc/5])))';
 tb = linspace(tspan(1),tspan(end),fix(diff(tspan)./[Tc/5]))';
@@ -232,17 +232,19 @@ fprintf(1,'\n');
 
 % Compute b dot gradB and mu for Full Dynamic Boris
 [B,gradB] = mdiscMagneticField3D(Rm,{Xb(:,1)/Re,Xb(:,2)/Re,Xb(:,3)/Re});
-BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
-Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./B{4};
+Bm = B{4};
+BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
+Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./Bm.^2;
 % Instantaneous first invariant Eq.14 
-muib = gamma^2*mp*Vper2b./(2*sqrt(B{4}));
+muib = gamma^2*mp*Vper2b./(2*Bm);
 
 % Compute b dot gradB and mu for Guiding Centre
 [B,gradB] = mdiscMagneticField3D(Rm,{Xgc(:,1)/Re,Xgc(:,2)/Re,Xgc(:,3)/Re});
-BgBgc = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
+Bm = B{4};
+BgBgc = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
 Vper2gc = V2-Xgc(:,4).^2;
 % Instantaneous first invariant Eq.14 
-muigc = gamma^2*mp*Vper2gc./(2*sqrt(B{4}));
+muigc = gamma^2*mp*Vper2gc./(2*Bm);
 
 subplot(211), 
 plot(tb,muib,tgc,muigc,tgc,facdv*gamma^2*mp*ones(size(tgc))),
@@ -369,7 +371,7 @@ B = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
 
 fac = qOverM/gamma;
 
-%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
+%T = -[Bx,By,Bz]'/B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 
@@ -417,11 +419,11 @@ function dr_dt = gcdynamic3d(t,r)
 [x,y,z,vpar] = deal(r(1,:),r(2,:),r(3,:),r(4,:));
 
 [B,gradB] = mdiscMagneticField3D(Rm,{x/Re,y/Re,z/Re});
-[Bx,By,Bz,B2] = deal(B{:});
-[gradBx,gradBy,gradBz] = deal(gradB{:});
+[Bx,By,Bz,Bm] = deal(B{:});
+[gradBx,gradBy,gradBz] = deal(gradB{1:3});
 
-B = B2.^.5;
-iB = 1./B;
+B2 = Bm.^2;
+iB = 1./Bm;
 bx = Bx.*iB; by = By.*iB; bz = Bz.*iB;
 
 fac = gamma./(2*qOverM*B2).*(V2 + vpar.^2);
@@ -440,11 +442,11 @@ function [tc,tb,td] = periods(R,alpha)
 B = mdiscMagneticField3D(Rm, {R/Re,0,0});
 Be = mdiscMagneticField3D(Rm, {Re/Re,0,0});
 
-B  = sqrt(B{4});
-Be = sqrt(Be{4});
+Bm  = B{4};
+Bme = Be{4};
 
 % Angular gyro frequency
-Omegac = qOverM/gamma*B;
+Omegac = qOverM/gamma*Bm;
 
 % Gyro period
 tc = 2*pi/Omegac;
@@ -458,7 +460,7 @@ tb = fac*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
 
 % Drift period 
-td = 2*pi*qOverM*Be*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
+td = 2*pi*qOverM*Bme*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node23.html
 %td = pi*qp*Be*Re^3/(3*EMeV*R)/(0.35+0.15*sind(alpha));
 %td = 1.05/(EMeV/(1e6*eV))/(R/Re)/(1+0.43*sind(alpha))*3600;
