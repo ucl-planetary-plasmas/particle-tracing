@@ -36,9 +36,9 @@ function trajectory_main(R0, mlat0, mlong0, KE0, pitcheq, particle, planet, llim
 %           Typical input example: trajectory_main(1.5,0,0,1000,80,'p','E',0,'N',-1,1000,1,'A',3)
 
 %
-% $Id: trajectory_main.m,v 1.4 2017/10/18 09:40:00 patrick Exp $
+% $Id: trajectory_main.m,v 1.5 2026/07/08 18:28:02 patrick Exp $
 %
-% Copyright (c) 2015-2017 Patrick Guio <patrick.guio@gmail.com>
+% Copyright (c) 2015 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
 %
 % This program is free software; you can redistribute it and/or modify it
@@ -1067,3 +1067,4 @@ function periods = fourier(t,maglat)
 end
 
 end
+

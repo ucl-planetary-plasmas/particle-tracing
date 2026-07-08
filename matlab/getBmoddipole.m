@@ -8,9 +8,9 @@ function Bmod = getBmoddipole(m, rm, r, RP)
 %    RP : PLanetary radius / Earth's
 %
 
-% $Id: getBmoddipole.m,v 1.1 2017/10/06 11:15:22 patrick Exp $
+% $Id: getBmoddipole.m,v 1.2 2026/07/08 18:28:02 patrick Exp $
 %
-% Copyright (c) 2009-2017 Patrick Guio <patrick.guio@gmail.com>
+% Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 %
 % All Rights Reserved.
 %
