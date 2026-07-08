@@ -1,30 +1,42 @@
 function [Br, Bt, varargout] = MDiscField(r, theta)
 % function [Br, Bt, gradB, curvB] = MDiscField(r, theta)
 %
-% r = radial distance in RJ
-% theta = colatitude in radians
+% r      : radial distance [Rp]
+% theta  : colatitude [rad]
 %
-% Br = radial field in Tesla
-% Bt = meridional field in Tesla
-% gradB = gradient (r,theta) of the amplitude of the magnetic field in
-%         Tesla/m {dB/dr,1/rdB/dt, gradBm, LB=B/gradBm}
-% curvB = curvature parameters along the field line in m / m-1
-%           {Rc, Kr, Kt, Km, dBr/dr, dBt/dr, 1/rdBr/dt, 1/rdBt/dt} 
+% Br     : radial magnetic field component  [T]
+% Bt     : meridional magnetic field component [T]
 %
-% The disc model filename is set with the global variable MDFile, for
-% instance
+% gradB = {dBm/dr, 1/r dBm/dt, |grad Bm|, LB=Bm/|grad Bm|}
+%        : optional magnetic field amplitude gradient parameters 
+%          in polar coordinates
+%         {[T/m], [T/m], [T/m], [m]}
+%
+% curvB = {Kr, Kt, Km, Rc=1/Km, dbr/dr, 1/r dbr/dt, dbt/dr, 1/r dbt/dt} 
+%        : optional magnetic field curvature parameters 
+%          in polar coordinates
+%         {[m-1], [m-1], [m-1], [m], [T/m], [T/m], [T/m], [T/m]}
+%
+% The magnetodisc model filename is set with the global variable MDFile.
+% For instance
 %
 %   global MDFile
 %   MDFile = 'jup_mdisc_kh3e7_rmp90.mat';
 % 
-% The disc file can be cleared by clearing the MDiscField function
+% The magnetodisc data can be removed by clearing the MDiscField function
 %
 %   clear MDiscField
 % 
+% By default the magnetodisc data is selected, to select the dipole data set
+% the global variable DipoleOn to true
+% For instance
+% 
+%   global DipoleOn
+%   DipoleOn = true;
 
-% $Id: MDiscField.m,v 1.11 2026/06/24 12:42:27 patrick Exp $
+% $Id: MDiscField.m,v 1.15 2026/07/08 13:03:24 patrick Exp $
 %
-% Copyright (c) 2016-2017 Patrick Guio <patrick.guio@gmail.com>
+% Copyright (c) 2016 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
 %
 % This program is free software; you can redistribute it and/or modify it
@@ -171,7 +183,7 @@ Km = sqrt(Kr.^2+Kt.^2);
 
 Rc = 1./Km;
 
-curvB = {Rc, Kr, Kt, Km, dbrdr, dbrdt, dbtdr, dbtdt};
+curvB = {Kr, Kt, Km, Rc, dbrdr, dbrdt, dbtdr, dbtdt};
 
 varargout{2} = curvB;
 
