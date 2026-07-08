@@ -44,13 +44,13 @@ function dipbtracer(planet,partype,Ep,Ri,ai,timespec,savefile,pauseOn,npertc)
 %   ai = 30;                          % initial pitch angle 30 degrees
 %   timespec = [0,0,2,0];             % run for 1 dipole bounce period
 %
-%   diptracer('jupiter',partype,Ep,Ri,ai,timespec);
-%   diptracer('saturn',partype,Ep,Ri,ai,timespec);
+%   dipbtracer('jupiter',partype,Ep,Ri,ai,timespec);
+%   dipbtracer('saturn',partype,Ep,Ri,ai,timespec);
 %
 % but don't save the simulation data.
 
 %
-% $Id: dipbtracer.m,v 1.6 2022/08/01 14:37:36 patrick Exp $
+% $Id: dipbtracer.m,v 1.7 2026/07/08 18:08:09 patrick Exp $
 %
 % Copyright (c) 2018 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
@@ -172,19 +172,19 @@ Xo = [R;            0;            0;...
 
 % magnetic field at initial position
 B = dipoleMagneticField3D(Md,Rm,{Xo(1),Xo(2),Xo(3)});
-b = sqrt(B{4});
+Bm = B{4};
 
-fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*b)
+fprintf(1,'R=%.2f pitch angle=%.0f B=%.5g nT\n', R/Re, alpha, 1e9*Bm)
 
 % v parallel and perpendicular
-vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
+vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/Bm);
 vper = sqrt(V2-vpar^2);
 
 % gyro radius
-rho = abs(gamma/qOverM*vper/b);
+rho = abs(gamma/qOverM*vper/Bm);
 
 % first invariant mu
-mu = gamma^2*mp*vper^2/(2*b);
+mu = gamma^2*mp*vper^2/(2*Bm);
 
 [tc,tb,td] = periods(R,alpha);
 
@@ -213,7 +213,7 @@ Yp = sin(ts);
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
 B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at mirror point
-tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
+tm = 2*pi/(qOverM/gamma*B{4});
 % number of iteration such that dt \sim max([2*tm,Tc/5])
 tb = linspace(tspan(1),tspan(end),ceil(diff(tspan)./[Tc/npertc]))';
 dt = diff(tb(1:2));
@@ -272,15 +272,15 @@ end
 
 % Compute b dot gradB and mu for Full Dynamic Boris
 [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xb(:,1),Xb(:,2),Xb(:,3)});
-b = sqrt(B{4});
-BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./b;
-%Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./b;
+Bm = B{4};
+BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
+%Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./Bm;
 V2b = Xb(:,4).^2+Xb(:,5).^2+Xb(:,6).^2;
-Vparb = (B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6))./b;
+Vparb = (B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6))./Bm;
 Vperb = sqrt(V2b-Vparb.^2);
 Vper2b = V2-Vparb.^2;
 % Instantaneous first invariant Eq.14 
-muib = gamma^2*mp*Vper2b./(2*b);
+muib = gamma^2*mp*Vper2b./(2*Bm);
 
 subplot(211), 
 plot(tb,muib,tb,facdv*gamma^2*mp*ones(size(tb))),
@@ -375,8 +375,8 @@ legend({'FD','FIT'})
 drawnow
 
 if ~isempty(savefile), % save all trajectories
-  Be = dipoleMagneticField3D(Md, Rm, {Re,0,0});
-  Be = sqrt(Be{4});
+  B = dipoleMagneticField3D(Md, Rm, {Re,0,0});
+  Be = B{4};
   save(savefile,'planet','Re','Be','Ep','Ri','ai','timespec',...
        'Tc','Tb','Td','Lm','tb','Xb',...
        'Zb','Rcylb','Rtotb','Eb','muib','latb','lonb',...
@@ -397,7 +397,7 @@ B = dipoleMagneticField3D(Md,Rm,{x,y,z});
 
 fac = qOverM/gamma;
 
-%T = -[Bx,By,Bz]'/sqrt(B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
+%T = -[Bx,By,Bz]'/B{4}*tan(\theta/2.0) = qB/m\Delta{t}/2;
 T = fac*[Bx,By,Bz]'*h/2;
 S = 2.0 * T /(1+T'*T);
 
@@ -445,11 +445,11 @@ function [tc,tb,td] = periods(R,alpha)
 B = dipoleMagneticField3D(Md, Rm, {R,0,0});
 Be = dipoleMagneticField3D(Md, Rm, {Re,0,0});
 
-B  = sqrt(B{4});
-Be = sqrt(Be{4});
+Bm  = B{4};
+Bme = Be{4};
 
 % Angular gyro frequency
-Omegac = abs(qOverM)/gamma*B;
+Omegac = abs(qOverM)/gamma*Bm;
 
 % Gyro period
 tc = 2*pi/Omegac;
@@ -464,7 +464,7 @@ tb = fac*(R/Re)*c/vp*(1-0.4635*sind(alpha)^0.75);
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
 
 % Drift period 
-td = 2*pi*abs(qOverM)*Be*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
+td = 2*pi*abs(qOverM)*Bme*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node23.html
 %td = pi*qp*Be*Re^3/(3*EMeV*R)/(0.35+0.15*sind(alpha));
 %td = 1.05/(EMeV/(1e6*eV))/(R/Re)/(1+0.43*sind(alpha))*3600;
