@@ -4,7 +4,7 @@
 % Error using quit
 % Unrecognized function or variable 'Settings'.
 %
-% workarounf for bug in R2021b, fixed in update 2
+% workaround for bug in R2021b, fixed in update 2
 % settings;
 
 if exist('groot') == 5,
