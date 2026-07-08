@@ -15,9 +15,9 @@ function cmptraj_earth(timespec)
 % two bounce periods.
 
 %
-% $Id: cmptraj_earth.m,v 1.8 2019/06/10 15:32:51 patrick Exp $
+% $Id: cmptraj_earth.m,v 1.9 2026/07/08 17:11:41 patrick Exp $
 %
-% Copyright (c) 2009-2016 Patrick Guio <patrick.guio@gmail.com>
+% Copyright (c) 2009 Patrick Guio <patrick.guio@gmail.com>
 % All Rights Reserved.
 %
 % This program is free software; you can redistribute it and/or modify it
@@ -98,19 +98,19 @@ Xo = [R;            0;            0;...
 
 % initial guiding centre x0,y0,z0,vpar0
 B = dipoleMagneticField3D(Md,Rm,{Xo(1),Xo(2),Xo(3)});
-b = sqrt(B{4});
+Bm = B{4};
 % smaller vpar gives larger vper thus guiding centre motion
-%vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
-vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/b);
+%vpar = 0.9220*sum(Xo(4:6).*[B{1};B{2};B{3}]/Bm);
+vpar = sum(Xo(4:6).*[B{1};B{2};B{3}]/Bm);
 vper = sqrt(V2-vpar^2);
 % gyro radius
-rho = abs(gamma/qOverM*vper/b);
+rho = abs(gamma/qOverM*vper/Bm);
 % add or substract gyroradius depending on sign of q and magnetic moment
 Xogc = [R-sign(qOverM*Md(3))*rho;0;0;vpar];
 B = dipoleMagneticField3D(Md,Rm,{Xogc(1),Xogc(2),Xogc(3)});
-b = sqrt(B{4});
+Bm = B{4};
 % first invariant mu
-mu = gamma^2*mp*vper^2/(2*b);
+mu = gamma^2*mp*vper^2/(2*Bm);
 [tc,tb,td] = periods(R);
 lm = mirrorlat(alpha);
 L = R/Re;
@@ -145,7 +145,7 @@ tic
 rm = {Xo(1)*cosd(Lm)^3,Xo(1)*cosd(Lm)^2*sind(Lm),0};
 B = dipoleMagneticField3D(Md,Rm,rm);
 % Gyro period at mirror point
-tm = 2*pi/(qOverM/gamma*sqrt(B{4}));
+tm = 2*pi/(qOverM/gamma*B{4});
 %tb = linspace(0,t(end),floor(t(end)/max(diff(t))));
 tb = linspace(tspan(1),tspan(end),4*fix(diff(tspan)/tm))';
 %tb = t;
@@ -210,24 +210,27 @@ fprintf(1,'\n');
 
 % Compute b dot gradB and mu for Full Dynamic
 [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xfd(:,1),Xfd(:,2),Xfd(:,3)});
-BgBfd = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
-Vper2fd = V2-(B{1}.*Xfd(:,4)+B{2}.*Xfd(:,5)+B{3}.*Xfd(:,6)).^2./B{4};
+Bm = B{4};
+BgBfd = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
+Vper2fd = V2-(B{1}.*Xfd(:,4)+B{2}.*Xfd(:,5)+B{3}.*Xfd(:,6)).^2./Bm.^2;
 % Instantaneous first invariant Eq.14 
-muifd = gamma^2*mp*Vper2fd./(2*sqrt(B{4}));
+muifd = gamma^2*mp*Vper2fd./(2*Bm);
 
 % Compute b dot gradB and mu for Full Dynamic Boris
 [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xb(:,1),Xb(:,2),Xb(:,3)});
-BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
-Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./B{4};
+Bm = B{4};
+BgBb = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
+Vper2b = V2-(B{1}.*Xb(:,4)+B{2}.*Xb(:,5)+B{3}.*Xb(:,6)).^2./Bm.^2;
 % Instantaneous first invariant Eq.14
-muib = gamma^2*mp*Vper2b./(2*sqrt(B{4}));
+muib = gamma^2*mp*Vper2b./(2*Bm);
 
 % Compute b dot gradB and mu for Guiding Centre
 [B,gradB] = dipoleMagneticField3D(Md, Rm, {Xgc(:,1),Xgc(:,2),Xgc(:,3)});
-BgBgc = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./sqrt(B{4});
+Bm = B{4};
+BgBgc = (B{1}.*gradB{1}+B{2}.*gradB{2}+B{3}.*gradB{3})./Bm;
 Vper2gc = V2-Xgc(:,4).^2;
 % Instantaneous first invariant Eq.14 
-muigc = gamma^2*mp*Vper2gc./(2*sqrt(B{4}));
+muigc = gamma^2*mp*Vper2gc./(2*Bm);
 
 subplot(211), 
 plot(tfd,muifd,tb,muib,tgc,muigc,tgc,facdv*gamma^2*mp*ones(size(tgc))),
@@ -410,11 +413,11 @@ function dr_dt = gcdynamic3d(t,r)
 [x,y,z,vpar] = deal(r(1,:),r(2,:),r(3,:),r(4,:));
 
 [B,gradB] = dipoleMagneticField3D(Md, Rm, {x,y,z});
-[Bx,By,Bz,B2] = deal(B{:});
-[gradBx,gradBy,gradBz] = deal(gradB{:});
+[Bx,By,Bz,Bm] = deal(B{:});
+[gradBx,gradBy,gradBz] = deal(gradB{1:3});
 
-B = B2.^.5;
-iB = 1./B;
+B2 = Bm.^2;
+iB = 1./Bm;
 bx = Bx.*iB; by = By.*iB; bz = Bz.*iB;
 
 fac = gamma./(2*qOverM*B2).*(V2 + vpar.^2);
@@ -433,11 +436,11 @@ function [tc,tb,td] = periods(R)
 B = dipoleMagneticField3D(Md, Rm, {R,0,0});
 Be = dipoleMagneticField3D(Md, Rm, {Re,0,0});
 
-B  = sqrt(B{4});
-Be = sqrt(Be{4});
+Bm  = B{4};
+Bme = Be{4};
 
 % Angular gyro frequency
-Omegac = qOverM/gamma*B;
+Omegac = qOverM/gamma*Bm;
 
 % Gyro period
 tc = 2*pi/Omegac;
@@ -449,7 +452,7 @@ tb = 0.117*(R/Re)*(c/vp)*(1-0.4635*sind(alpha)^0.75);
 %tb = R*sqrt(2)/vp*(3.7-1.6*sind(alpha));
 
 % Drift period 
-td = 2*pi*qOverM*Be*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
+td = 2*pi*qOverM*Bme*Re^3/vp^2/R*(1-1/3*(sind(alpha))^0.62);
 % https://farside.ph.utexas.edu/teaching/plasma/lectures1/node23.html
 %td = pi*qp*Be*Re^3/(3*Ep*R)/(0.35+0.15*sind(alpha));
 %td = 1.05/(Ep/(1e6*eV))/(R/Re)/(1+0.43*sind(alpha))*3600;
